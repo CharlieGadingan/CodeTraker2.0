@@ -1,547 +1,1141 @@
 <!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CodeTracker — Syntax Analyzer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        /* (All the CSS from before - keeping it compact here) */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg-dark: #0d1117; --bg-card: #161b22; --bg-input: #0d1117;
-            --border: #30363d; --text-primary: #c9d1d9; --text-secondary: #8b949e;
-            --accent-blue: #58a6ff; --accent-green: #3fb950; --accent-red: #f85149;
-            --accent-yellow: #d29922; --accent-purple: #bc8cff;
+      /* (All the CSS from before - keeping it compact here) */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --bg-dark: #0d1117;
+        --bg-card: #161b22;
+        --bg-input: #0d1117;
+        --border: #30363d;
+        --text-primary: #c9d1d9;
+        --text-secondary: #8b949e;
+        --accent-blue: #58a6ff;
+        --accent-green: #3fb950;
+        --accent-red: #f85149;
+        --accent-yellow: #d29922;
+        --accent-purple: #bc8cff;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        min-height: 100vh;
+      }
+      /* Header */
+      .site-header {
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border);
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .brand-logo {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-purple)
+        );
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+      }
+      .brand-text h1 {
+        font-size: 1.5rem;
+        color: var(--text-primary);
+      }
+      .brand-text .subtitle {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .user-info {
+        text-align: right;
+      }
+      .user-name {
+        font-weight: 600;
+      }
+      .user-role {
+        font-size: 0.8rem;
+        color: var(--accent-blue);
+      }
+      .user-avatar {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-purple)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
+      /* Main Content */
+      .main-content {
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      /* Student Profile */
+      .student-profile {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+      .profile-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .avatar-large {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-purple)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+      .person h2 {
+        margin-bottom: 5px;
+      }
+      .person .email {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      .badges {
+        display: flex;
+        gap: 10px;
+      }
+      .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .badge.green {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .badge.blue {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .profile-stats {
+        display: flex;
+        gap: 20px;
+      }
+      .stat-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        min-width: 140px;
+      }
+      .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+      .stat-icon.pending {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .stat-icon.completed {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .stat-title {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      /* Assignments Section */
+      .assignments-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+      }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+      .section-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.5rem;
+      }
+      .assignments-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .assignment-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        transition: all 0.3s;
+      }
+      .assignment-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      }
+      .assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      .assignment-header h3 {
+        font-size: 1.3rem;
+        color: var(--accent-blue);
+      }
+      .status-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status-badge.pending {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .status-badge.checked {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .status-badge.reviewed {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .assignment-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+        background: var(--bg-card);
+        padding: 15px;
+        border-radius: 8px;
+      }
+      .detail-item {
+        font-size: 0.95rem;
+      }
+      .detail-item strong {
+        color: var(--text-secondary);
+        display: block;
+        margin-bottom: 3px;
+        font-size: 0.85rem;
+      }
+      .repo-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .repo-link:hover {
+        text-decoration: underline;
+      }
+      .assignment-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: var(--accent-blue);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #4090e0;
+        transform: translateY(-2px);
+      }
+      .btn-secondary {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: var(--border);
+      }
+      .btn-success {
+        background: var(--accent-green);
+        color: white;
+      }
+      .btn-success:hover {
+        background: #36a346;
+        transform: translateY(-2px);
+      }
+      /* Assignment Feedback Display */
+      .assignment-feedback {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+      }
+      .feedback-summary {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+      .feedback-stat {
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedback-stat.errors {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--accent-red);
+      }
+      .feedback-stat.warnings {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .feedback-stat.status {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .feedback-text {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+      }
+      .feedback-text h4 {
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedback-text p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+      /* Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 1000;
+        overflow: auto;
+      }
+      .modal-overlay.active {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 20px;
+      }
+      .syntax-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 1400px;
+        height: 95vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+      }
+      .modal-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.3rem;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.8rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: var(--text-primary);
+      }
+      .modal-body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+      /* File Sidebar */
+      .file-sidebar {
+        width: 280px;
+        background: var(--bg-input);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+      .file-sidebar-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+      .file-sidebar-header h4 {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .file-search {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+      }
+      .file-search:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+      }
+      .file-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .file-item {
+        padding: 10px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+        transition: background 0.2s;
+      }
+      .file-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .file-item.active {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .file-item.has-errors {
+        border-left: 3px solid var(--accent-red);
+      }
+      .file-item.has-warnings {
+        border-left: 3px solid var(--accent-yellow);
+      }
+      .file-item.checked {
+        border-left: 3px solid var(--accent-green);
+      }
+      .file-icon {
+        font-size: 1rem;
+        width: 20px;
+        text-align: center;
+      }
+      .file-name {
+        flex: 1;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-status-icon {
+        font-size: 0.8rem;
+      }
+      /* Code Area */
+      .code-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .code-toolbar {
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .current-file {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.95rem;
+      }
+      .language-badge {
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        background: rgba(188, 140, 255, 0.15);
+        color: var(--accent-purple);
+      }
+      .code-viewer {
+        flex: 1;
+        display: flex;
+        overflow: auto;
+        background: #1e1e1e;
+        position: relative;
+      }
+      .line-numbers {
+        padding: 15px 10px;
+        background: #1e1e1e;
+        color: #6e7681;
+        text-align: right;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        user-select: none;
+        min-width: 50px;
+        border-right: 1px solid #2d2d2d;
+      }
+      .code-content {
+        flex: 1;
+        padding: 15px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #d4d4d4;
+        white-space: pre;
+        overflow-x: auto;
+      }
+      .code-line {
+        display: block;
+      }
+      .code-line.error-line {
+        background: rgba(248, 81, 73, 0.2);
+        border-left: 3px solid var(--accent-red);
+        margin-left: -3px;
+        padding-left: 10px;
+      }
+      .code-line.warning-line {
+        background: rgba(210, 153, 34, 0.2);
+        border-left: 3px solid var(--accent-yellow);
+        margin-left: -3px;
+        padding-left: 10px;
+      }
+      /* Error Panel */
+      .error-panel {
+        width: 350px;
+        background: var(--bg-input);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+      .error-panel-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .error-panel-header h4 {
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .error-summary {
+        display: flex;
+        gap: 10px;
+      }
+      .error-count,
+      .warning-count {
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+      }
+      .error-count {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--accent-red);
+      }
+      .warning-count {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .error-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .error-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent-red);
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+      .error-item.warning {
+        border-left-color: var(--accent-yellow);
+      }
+      .error-line-num {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+      }
+      .error-message {
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+      .no-errors {
+        text-align: center;
+        padding: 30px;
+        color: var(--accent-green);
+      }
+      .no-errors i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+      }
+      /* Feedback Section */
+      .feedback-section {
+        border-top: 1px solid var(--border);
+        padding: 15px 20px;
+        background: var(--bg-input);
+      }
+      .feedback-section h4 {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+      }
+      .feedback-textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        resize: vertical;
+        margin-bottom: 10px;
+      }
+      .feedback-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+      }
+      .feedback-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      /* Loading States */
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(13, 17, 23, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .loading-overlay.hidden {
+        display: none;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent-blue);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-dark); color: var(--text-primary); min-height: 100vh;
+      }
+      .loading-text {
+        margin-top: 15px;
+        color: var(--text-secondary);
+        font-size: 1rem;
+      }
+      /* Analysis Progress */
+      .analysis-progress {
+        position: absolute;
+        top: 60px;
+        left: 20px;
+        right: 20px;
+        margin: 10px 0;
+        padding: 15px;
+        background: var(--bg-card);
+        border-radius: 8px;
+        z-index: 10;
+        border: 1px solid var(--border);
+      }
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
+      .progress-bar-container {
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent-blue);
+        transition: width 0.3s ease;
+      }
+      /* Toasts */
+      .success-toast,
+      .error-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+      }
+      .success-toast {
+        background: var(--accent-green);
+      }
+      .error-toast {
+        background: var(--accent-red);
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
         }
-        /* Header */
-        .site-header {
-            background: var(--bg-card); border-bottom: 1px solid var(--border);
-            padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;
+        to {
+          transform: translateX(0);
+          opacity: 1;
         }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .brand-logo {
-            width: 64px; height: 64px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; color: white;
+      }
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .modal-body {
+          flex-direction: column;
         }
-        .brand-text h1 { font-size: 1.5rem; color: var(--text-primary); }
-        .brand-text .subtitle { font-size: 0.8rem; color: var(--text-secondary); }
-        .header-right { display: flex; align-items: center; gap: 20px; }
-        .user-info { text-align: right; }
-        .user-name { font-weight: 600; }
-        .user-role { font-size: 0.8rem; color: var(--accent-blue); }
-        .user-avatar {
-            width: 45px; height: 45px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.2rem;
-        }
-        /* Main Content */
-        .main-content { padding: 30px; max-width: 1200px; margin: 0 auto; }
-        /* Student Profile */
-        .student-profile {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 12px; padding: 25px; display: flex;
-            justify-content: space-between; align-items: center; margin-bottom: 30px;
-        }
-        .profile-left { display: flex; align-items: center; gap: 20px; }
-        .avatar-large {
-            width: 80px; height: 80px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; font-weight: 700;
-        }
-        .person h2 { margin-bottom: 5px; }
-        .person .email { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px; }
-        .badges { display: flex; gap: 10px; }
-        .badge {
-            padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .badge.green { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
-        .badge.blue { background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); }
-        .profile-stats { display: flex; gap: 20px; }
-        .stat-card {
-            background: var(--bg-input); border: 1px solid var(--border);
-            border-radius: 8px; padding: 15px 25px; display: flex;
-            align-items: center; gap: 15px; min-width: 140px;
-        }
-        .stat-icon {
-            width: 40px; height: 40px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-        }
-        .stat-icon.pending { background: rgba(210, 153, 34, 0.15); color: var(--accent-yellow); }
-        .stat-icon.completed { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
-        .stat-title { font-size: 0.8rem; color: var(--text-secondary); }
-        .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1.2; }
-        /* Assignments Section */
-        .assignments-section {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 12px; padding: 25px;
-        }
-        .section-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;
-        }
-        .section-header h2 {
-            display: flex; align-items: center; gap: 10px; font-size: 1.5rem;
-        }
-        .assignments-container { display: flex; flex-direction: column; gap: 20px; }
-        .assignment-card {
-            background: var(--bg-input); border: 1px solid var(--border);
-            border-radius: 12px; padding: 25px; transition: all 0.3s;
-        }
-        .assignment-card:hover {
-            border-color: var(--accent-blue); box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
-        .assignment-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
-        }
-        .assignment-header h3 { font-size: 1.3rem; color: var(--accent-blue); }
-        .status-badge {
-            padding: 6px 16px; border-radius: 20px; font-size: 0.9rem;
-            font-weight: 600; display: flex; align-items: center; gap: 6px;
-        }
-        .status-badge.pending { background: rgba(210, 153, 34, 0.15); color: var(--accent-yellow); }
-        .status-badge.checked { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
-        .status-badge.reviewed { background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); }
-        .assignment-details {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px; margin-bottom: 20px; background: var(--bg-card);
-            padding: 15px; border-radius: 8px;
-        }
-        .detail-item { font-size: 0.95rem; }
-        .detail-item strong {
-            color: var(--text-secondary); display: block; margin-bottom: 3px; font-size: 0.85rem;
-        }
-        .repo-link {
-            color: var(--accent-blue); text-decoration: none;
-            display: inline-flex; align-items: center; gap: 5px;
-        }
-        .repo-link:hover { text-decoration: underline; }
-        .assignment-actions { display: flex; gap: 10px; margin-top: 15px; }
-        .btn {
-            padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem;
-            font-weight: 600; cursor: pointer; display: flex; align-items: center;
-            gap: 8px; transition: all 0.2s;
-        }
-        .btn-primary { background: var(--accent-blue); color: white; }
-        .btn-primary:hover { background: #4090e0; transform: translateY(-2px); }
-        .btn-secondary {
-            background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border);
-        }
-        .btn-secondary:hover { background: var(--border); }
-        .btn-success { background: var(--accent-green); color: white; }
-        .btn-success:hover { background: #36a346; transform: translateY(-2px); }
-        /* Assignment Feedback Display */
-        .assignment-feedback {
-            margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);
-        }
-        .feedback-summary {
-            display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;
-        }
-        .feedback-stat {
-            padding: 8px 15px; border-radius: 6px; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .feedback-stat.errors { background: rgba(248,81,73,0.15); color: var(--accent-red); }
-        .feedback-stat.warnings { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
-        .feedback-stat.status { background: rgba(63,185,80,0.15); color: var(--accent-green); }
-        .feedback-text {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 8px; padding: 15px; margin-top: 15px;
-        }
-        .feedback-text h4 {
-            color: var(--accent-blue); margin-bottom: 10px; font-size: 1rem;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .feedback-text p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
-        /* Modal */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.95); z-index: 1000; overflow: auto;
-        }
-        .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
-        .syntax-modal {
-            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-            width: 100%; max-width: 1400px; height: 95vh; overflow: hidden;
-            display: flex; flex-direction: column;
-        }
-        .modal-header {
-            background: var(--bg-input); border-bottom: 1px solid var(--border);
-            padding: 15px 20px; display: flex; justify-content: space-between;
-            align-items: center; position: relative;
-        }
-        .modal-header h2 { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; }
-        .modal-close {
-            background: none; border: none; color: var(--text-secondary);
-            font-size: 1.8rem; cursor: pointer; padding: 5px 10px; line-height: 1;
-        }
-        .modal-close:hover { color: var(--text-primary); }
-        .modal-body { display: flex; flex: 1; overflow: hidden; position: relative; }
-        /* File Sidebar */
         .file-sidebar {
-            width: 280px; background: var(--bg-input); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
+          width: 100%;
+          max-height: 200px;
         }
-        .file-sidebar-header { padding: 15px; border-bottom: 1px solid var(--border); }
-        .file-sidebar-header h4 {
-            font-size: 0.95rem; color: var(--text-secondary);
-            margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
-        }
-        .file-search {
-            width: 100%; padding: 8px 12px; background: var(--bg-card);
-            border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);
-            font-size: 0.85rem;
-        }
-        .file-search:focus { outline: none; border-color: var(--accent-blue); }
-        .file-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .file-item {
-            padding: 10px 12px; border-radius: 6px; cursor: pointer;
-            display: flex; align-items: center; gap: 10px; margin-bottom: 5px;
-            transition: background 0.2s;
-        }
-        .file-item:hover { background: rgba(255,255,255,0.05); }
-        .file-item.active { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
-        .file-item.has-errors { border-left: 3px solid var(--accent-red); }
-        .file-item.has-warnings { border-left: 3px solid var(--accent-yellow); }
-        .file-item.checked { border-left: 3px solid var(--accent-green); }
-        .file-icon { font-size: 1rem; width: 20px; text-align: center; }
-        .file-name {
-            flex: 1; font-size: 0.85rem; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
-        .file-status-icon { font-size: 0.8rem; }
-        /* Code Area */
-        .code-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .code-toolbar {
-            background: var(--bg-input); border-bottom: 1px solid var(--border);
-            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .current-file { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
-        .language-badge {
-            padding: 3px 10px; border-radius: 4px; font-size: 0.75rem;
-            background: rgba(188,140,255,0.15); color: var(--accent-purple);
-        }
-        .code-viewer {
-            flex: 1; display: flex; overflow: auto; background: #1e1e1e; position: relative;
-        }
-        .line-numbers {
-            padding: 15px 10px; background: #1e1e1e; color: #6e7681;
-            text-align: right; font-family: "JetBrains Mono", monospace;
-            font-size: 14px; line-height: 1.6; user-select: none;
-            min-width: 50px; border-right: 1px solid #2d2d2d;
-        }
-        .code-content {
-            flex: 1; padding: 15px; font-family: "JetBrains Mono", monospace;
-            font-size: 14px; line-height: 1.6; color: #d4d4d4;
-            white-space: pre; overflow-x: auto;
-        }
-        .code-line { display: block; }
-        .code-line.error-line {
-            background: rgba(248,81,73,0.2); border-left: 3px solid var(--accent-red);
-            margin-left: -3px; padding-left: 10px;
-        }
-        .code-line.warning-line {
-            background: rgba(210,153,34,0.2); border-left: 3px solid var(--accent-yellow);
-            margin-left: -3px; padding-left: 10px;
-        }
-        /* Error Panel */
         .error-panel {
-            width: 350px; background: var(--bg-input); border-left: 1px solid var(--border);
-            display: flex; flex-direction: column;
+          width: 100%;
+          max-height: 250px;
         }
-        .error-panel-header {
-            padding: 15px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
+      }
+      @media (max-width: 768px) {
+        .student-profile {
+          flex-direction: column;
+          gap: 20px;
+          text-align: center;
         }
-        .error-panel-header h4 { font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-        .error-summary { display: flex; gap: 10px; }
-        .error-count, .warning-count { padding: 3px 10px; border-radius: 4px; font-size: 0.8rem; }
-        .error-count { background: rgba(248,81,73,0.15); color: var(--accent-red); }
-        .warning-count { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
-        .error-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .error-item {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-left: 3px solid var(--accent-red); border-radius: 6px;
-            padding: 12px; margin-bottom: 10px;
+        .profile-left {
+          flex-direction: column;
         }
-        .error-item.warning { border-left-color: var(--accent-yellow); }
-        .error-line-num { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px; }
-        .error-message { font-size: 0.85rem; line-height: 1.5; }
-        .no-errors { text-align: center; padding: 30px; color: var(--accent-green); }
-        .no-errors i { font-size: 2rem; margin-bottom: 10px; }
-        /* Feedback Section */
-        .feedback-section {
-            border-top: 1px solid var(--border); padding: 15px 20px; background: var(--bg-input);
+        .profile-stats {
+          flex-wrap: wrap;
+          justify-content: center;
         }
-        .feedback-section h4 {
-            margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;
+        .assignment-actions {
+          flex-direction: column;
         }
-        .feedback-textarea {
-            width: 100%; min-height: 80px; padding: 12px; background: var(--bg-card);
-            border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);
-            font-size: 0.9rem; resize: vertical; margin-bottom: 10px;
+        .btn {
+          width: 100%;
+          justify-content: center;
         }
-        .feedback-textarea:focus { outline: none; border-color: var(--accent-blue); }
-        .feedback-actions { display: flex; justify-content: flex-end; gap: 10px; }
-        /* Loading States */
-        .loading-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13,17,23,0.95); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 100;
-        }
-        .loading-overlay.hidden { display: none; }
-        .spinner {
-            width: 50px; height: 50px; border: 4px solid var(--border);
-            border-top-color: var(--accent-blue); border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { margin-top: 15px; color: var(--text-secondary); font-size: 1rem; }
-        /* Analysis Progress */
-        .analysis-progress {
-            position: absolute; top: 60px; left: 20px; right: 20px; margin: 10px 0;
-            padding: 15px; background: var(--bg-card); border-radius: 8px;
-            z-index: 10; border: 1px solid var(--border);
-        }
-        .progress-info {
-            display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem;
-        }
-        .progress-bar-container { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: var(--accent-blue); transition: width 0.3s ease; }
-        /* Toasts */
-        .success-toast, .error-toast {
-            position: fixed; bottom: 20px; right: 20px; color: white;
-            padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 2000; animation: slideIn 0.3s ease;
-        }
-        .success-toast { background: var(--accent-green); }
-        .error-toast { background: var(--accent-red); }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .modal-body { flex-direction: column; }
-            .file-sidebar { width: 100%; max-height: 200px; }
-            .error-panel { width: 100%; max-height: 250px; }
-        }
-        @media (max-width: 768px) {
-            .student-profile { flex-direction: column; gap: 20px; text-align: center; }
-            .profile-left { flex-direction: column; }
-            .profile-stats { flex-wrap: wrap; justify-content: center; }
-            .assignment-actions { flex-direction: column; }
-            .btn { width: 100%; justify-content: center; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Header -->
     <header class="site-header">
-        <div class="header-left">
-            <div class="brand-logo"><i class="fas fa-code"></i></div>
-            <div class="brand-text">
-                <h1>CodeTracker</h1>
-                <div class="subtitle">GitHub Project Syntax Analyzer</div>
-            </div>
+      <div class="header-left">
+        <div class="brand-logo"><i class="fas fa-code"></i></div>
+        <div class="brand-text">
+          <h1>CodeTracker</h1>
+          <div class="subtitle">GitHub Project Syntax Analyzer</div>
         </div>
-        <div class="header-right">
-            <div class="user-info">
-                <div class="user-name">Israel Cabasug</div>
-                <div class="user-role">Instructor</div>
-            </div>
-            <div class="user-avatar">IC</div>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <div class="user-name">Israel Cabasug</div>
+          <div class="user-role">Instructor</div>
         </div>
+        <div class="user-avatar">IC</div>
+      </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Student Profile -->
-        <div class="student-profile">
-            <div class="profile-left">
-                <div class="avatar-large" id="studentAvatar">DF</div>
-                <div class="person">
-                    <h2 id="studentName">Dexter Facelo</h2>
-                    <div class="email" id="studentEmail">dexter.facelo@student.edu</div>
-                    <div class="badges">
-                        <span class="badge green"><i class="fas fa-code-branch"></i> <span id="studentCourse">CS Student</span></span>
-                        <span class="badge blue"><i class="fas fa-star"></i> <span id="studentYear">Year 3</span></span>
-                    </div>
-                </div>
+      <!-- Student Profile -->
+      <div class="student-profile">
+        <div class="profile-left">
+          <div class="avatar-large" id="studentAvatar">DF</div>
+          <div class="person">
+            <h2 id="studentName">Dexter Facelo</h2>
+            <div class="email" id="studentEmail">dexter.facelo@student.edu</div>
+            <div class="badges">
+              <span class="badge green"
+                ><i class="fas fa-code-branch"></i>
+                <span id="studentCourse">CS Student</span></span
+              >
+              <span class="badge blue"
+                ><i class="fas fa-star"></i>
+                <span id="studentYear">Year 3</span></span
+              >
             </div>
-            <div class="profile-stats">
-                <div class="stat-card">
-                    <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
-                    <div>
-                        <div class="stat-title">Pending Review</div>
-                        <div class="stat-value" id="pendingCount">0</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon completed"><i class="fas fa-check-circle"></i></div>
-                    <div>
-                        <div class="stat-title">Completed</div>
-                        <div class="stat-value" id="completedCount">0</div>
-                    </div>
-                </div>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="stat-card">
+            <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
+            <div>
+              <div class="stat-title">Pending Review</div>
+              <div class="stat-value" id="pendingCount">0</div>
             </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon completed">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+              <div class="stat-title">Completed</div>
+              <div class="stat-value" id="completedCount">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignments Section -->
+      <div class="assignments-section">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-tasks" style="color: var(--accent-blue)"></i>
+            Student Assignments
+          </h2>
+          <span
+            class="status-badge"
+            style="background: rgba(88, 166, 255, 0.15)"
+          >
+            <i class="fab fa-github"></i> GitHub Integration
+          </span>
         </div>
 
-        <!-- Assignments Section -->
-        <div class="assignments-section">
-            <div class="section-header">
-                <h2><i class="fas fa-tasks" style="color: var(--accent-blue);"></i> Student Assignments</h2>
-                <span class="status-badge" style="background: rgba(88, 166, 255, 0.15);">
-                    <i class="fab fa-github"></i> GitHub Integration
-                </span>
-            </div>
-            
-            <div class="assignments-container" id="assignmentsContainer">
-                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                    <i class="fas fa-spinner fa-spin fa-3x"></i>
-                    <p style="margin-top: 20px;">Loading assignments...</p>
-                </div>
-            </div>
+        <div class="assignments-container" id="assignmentsContainer">
+          <div
+            style="
+              text-align: center;
+              padding: 40px;
+              color: var(--text-secondary);
+            "
+          >
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p style="margin-top: 20px">Loading assignments...</p>
+          </div>
         </div>
+      </div>
     </main>
 
     <!-- Syntax Analyzer Modal -->
     <div class="modal-overlay" id="syntaxModal">
-        <div class="syntax-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-code" style="color: var(--accent-blue);"></i> Syntax Analyzer - <span id="modalAssignmentTitle">Assignment</span></h2>
-                <button class="modal-close" onclick="window.closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- File List Sidebar -->
-                <div class="file-sidebar">
-                    <div class="file-sidebar-header">
-                        <h4><i class="fas fa-folder-open"></i> Repository Files</h4>
-                        <input type="text" class="file-search" placeholder="Search files..." id="fileSearch" />
-                    </div>
-                    <div class="file-list" id="fileList">
-                        <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                            <i class="fas fa-spinner fa-spin"></i> Loading files...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Code Area -->
-                <div class="code-area">
-                    <div class="code-toolbar">
-                        <div class="current-file">
-                            <i class="fas fa-file-code"></i>
-                            <span id="currentFileName">Select a file</span>
-                            <span class="language-badge" id="languageBadge">-</span>
-                        </div>
-                    </div>
-                    <div class="code-viewer" id="codeViewer">
-                        <div class="loading-overlay hidden" id="codeLoading">
-                            <div class="spinner"></div>
-                            <div class="loading-text">Loading file...</div>
-                        </div>
-                        <div class="line-numbers" id="lineNumbers"></div>
-                        <div class="code-content" id="codeContent">
-                            <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                                <i class="fas fa-arrow-left"></i> Select a file from the sidebar to view its contents
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Feedback Section -->
-                    <div class="feedback-section">
-                        <h4><i class="fas fa-comment-dots" style="color: var(--accent-blue);"></i> Professor Feedback</h4>
-                        <textarea class="feedback-textarea" id="feedbackText" placeholder="Enter your feedback about this code..."></textarea>
-                        <div class="feedback-actions">
-                            <button class="btn btn-secondary" onclick="window.previousFile()"><i class="fas fa-chevron-left"></i> Previous</button>
-                            <button class="btn btn-success" onclick="window.saveFeedbackAndDone()"><i class="fas fa-check"></i> Done Checking</button>
-                            <button class="btn btn-secondary" onclick="window.nextFile()">Next <i class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error Panel -->
-                <div class="error-panel">
-                    <div class="error-panel-header">
-                        <h4><i class="fas fa-exclamation-triangle" style="color: var(--accent-yellow);"></i> Issues Found</h4>
-                        <div class="error-summary">
-                            <span class="error-count" id="errorCount">0</span>
-                            <span class="warning-count" id="warningCount">0</span>
-                        </div>
-                    </div>
-                    <div class="error-list" id="errorList">
-                        <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                            Analysis will run automatically
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="syntax-modal">
+        <div class="modal-header">
+          <h2>
+            <i class="fas fa-code" style="color: var(--accent-blue)"></i> Syntax
+            Analyzer - <span id="modalAssignmentTitle">Assignment</span>
+          </h2>
+          <button class="modal-close" onclick="window.closeModal()">
+            &times;
+          </button>
         </div>
+        <div class="modal-body">
+          <!-- File List Sidebar -->
+          <div class="file-sidebar">
+            <div class="file-sidebar-header">
+              <h4><i class="fas fa-folder-open"></i> Repository Files</h4>
+              <input
+                type="text"
+                class="file-search"
+                placeholder="Search files..."
+                id="fileSearch"
+              />
+            </div>
+            <div class="file-list" id="fileList">
+              <div
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  color: var(--text-secondary);
+                "
+              >
+                <i class="fas fa-spinner fa-spin"></i> Loading files...
+              </div>
+            </div>
+          </div>
+
+          <!-- Code Area -->
+          <div class="code-area">
+            <div class="code-toolbar">
+              <div class="current-file">
+                <i class="fas fa-file-code"></i>
+                <span id="currentFileName">Select a file</span>
+                <span class="language-badge" id="languageBadge">-</span>
+              </div>
+            </div>
+            <div class="code-viewer" id="codeViewer">
+              <div class="loading-overlay hidden" id="codeLoading">
+                <div class="spinner"></div>
+                <div class="loading-text">Loading file...</div>
+              </div>
+              <div class="line-numbers" id="lineNumbers"></div>
+              <div class="code-content" id="codeContent">
+                <div
+                  style="
+                    padding: 20px;
+                    text-align: center;
+                    color: var(--text-secondary);
+                  "
+                >
+                  <i class="fas fa-arrow-left"></i> Select a file from the
+                  sidebar to view its contents
+                </div>
+              </div>
+            </div>
+
+            <!-- Feedback Section -->
+            <div class="feedback-section">
+              <h4>
+                <i
+                  class="fas fa-comment-dots"
+                  style="color: var(--accent-blue)"
+                ></i>
+                Professor Feedback
+              </h4>
+              <textarea
+                class="feedback-textarea"
+                id="feedbackText"
+                placeholder="Enter your feedback about this code..."
+              ></textarea>
+              <div class="feedback-actions">
+                <button
+                  class="btn btn-secondary"
+                  onclick="window.previousFile()"
+                >
+                  <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <button
+                  class="btn btn-success"
+                  onclick="window.saveFeedbackAndDone()"
+                >
+                  <i class="fas fa-check"></i> Done Checking
+                </button>
+                <button class="btn btn-secondary" onclick="window.nextFile()">
+                  Next <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Panel -->
+          <div class="error-panel">
+            <div class="error-panel-header">
+              <h4>
+                <i
+                  class="fas fa-exclamation-triangle"
+                  style="color: var(--accent-yellow)"
+                ></i>
+                Issues Found
+              </h4>
+              <div class="error-summary">
+                <span class="error-count" id="errorCount">0</span>
+                <span class="warning-count" id="warningCount">0</span>
+              </div>
+            </div>
+            <div class="error-list" id="errorList">
+              <div
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  color: var(--text-secondary);
+                "
+              >
+                Analysis will run automatically
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-        (function() {
-            const API_BASE_URL = "http://localhost:5500";
-            const STUDENT_ID = "student123";
+      (function () {
+        const API_BASE_URL = "http://localhost:5500";
+        const STUDENT_ID = "student123";
 
-            // Global state
-            let currentAssignment = null;
-            let currentSubmissionId = null;
-            let pollingInterval = null;
-            let fileList = [];
-            let currentFileIndex = 0;
-            let currentErrors = [];
-            let currentWarnings = [];
-            let fileAnalysisStatus = {};
+        // Global state
+        let currentAssignment = null;
+        let currentSubmissionId = null;
+        let pollingInterval = null;
+        let fileList = [];
+        let currentFileIndex = 0;
+        let currentErrors = [];
+        let currentWarnings = [];
+        let fileAnalysisStatus = {};
 
-            // Load assignments on page load
-            window.addEventListener('load', loadAssignments);
+        // Load assignments on page load
+        window.addEventListener("load", loadAssignments);
 
-            async function loadAssignments() {
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/assignments/${STUDENT_ID}`);
-                    
-                    if (result.success && result.data.success) {
-                        renderAssignments(result.data.assignments);
-                        updateStatusCounts();
-                    } else {
-                        showError('Failed to load assignments');
-                    }
-                } catch (error) {
-                    showError('Error loading assignments: ' + error.message);
-                }
+        async function loadAssignments() {
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/assignments/${STUDENT_ID}`,
+            );
+
+            if (result.success && result.data.success) {
+              renderAssignments(result.data.assignments);
+              updateStatusCounts();
+            } else {
+              showError("Failed to load assignments");
             }
+          } catch (error) {
+            showError("Error loading assignments: " + error.message);
+          }
+        }
 
-            function renderAssignments(assignments) {
-                const container = document.getElementById('assignmentsContainer');
-                
-                if (!assignments || assignments.length === 0) {
-                    container.innerHTML = `
+        function renderAssignments(assignments) {
+          const container = document.getElementById("assignmentsContainer");
+
+          if (!assignments || assignments.length === 0) {
+            container.innerHTML = `
                         <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
                             <i class="fas fa-folder-open fa-3x"></i>
                             <p style="margin-top: 20px;">No assignments found</p>
                         </div>
                     `;
-                    return;
-                }
+            return;
+          }
 
-                let html = '';
-                assignments.forEach(assignment => {
-                    const statusClass = assignment.status === 'reviewed' || assignment.status === 'completed' ? 'checked' : 'pending';
-                    const statusIcon = assignment.status === 'reviewed' || assignment.status === 'completed' ? 'fa-check-circle' : 'fa-clock';
-                    const statusText = assignment.status === 'reviewed' || assignment.status === 'completed' ? 'Checked' : 'Pending Review';
-                    
-                    html += `
+          let html = "";
+          assignments.forEach((assignment) => {
+            const statusClass =
+              assignment.status === "reviewed" ||
+              assignment.status === "completed"
+                ? "checked"
+                : "pending";
+            const statusIcon =
+              assignment.status === "reviewed" ||
+              assignment.status === "completed"
+                ? "fa-check-circle"
+                : "fa-clock";
+            const statusText =
+              assignment.status === "reviewed" ||
+              assignment.status === "completed"
+                ? "Checked"
+                : "Pending Review";
+
+            html += `
                         <div class="assignment-card" data-assignment-id="${assignment.assignment_id}" data-repo-url="${assignment.repo_url}">
                             <div class="assignment-header">
-                                <h3><i class="fas ${assignment.language === 'C' ? 'fa-code' : 'fa-copyright'}" style="color: var(--accent-blue);"></i> ${assignment.title}</h3>
+                                <h3><i class="fas ${assignment.language === "C" ? "fa-code" : "fa-copyright"}" style="color: var(--accent-blue);"></i> ${assignment.title}</h3>
                                 <span class="status-badge ${statusClass}" id="status-${assignment.assignment_id}">
                                     <i class="fas ${statusIcon}"></i> ${statusText}
                                 </span>
@@ -558,7 +1152,7 @@
                                 <div class="detail-item">
                                     <strong><i class="fas fa-code-branch"></i> Repository</strong>
                                     <a href="${assignment.repo_url}" class="repo-link" target="_blank">
-                                        <i class="fab fa-github"></i> ${assignment.repo_url.split('/').slice(-2).join('/')}
+                                        <i class="fab fa-github"></i> ${assignment.repo_url.split("/").slice(-2).join("/")}
                                     </a>
                                 </div>
                                 <div class="detail-item">
@@ -571,8 +1165,10 @@
                                     <i class="fas fa-code"></i> Open Syntax Analyzer
                                 </button>
                             </div>
-                            <div class="assignment-feedback" id="feedback-${assignment.assignment_id}" style="display: ${assignment.status === 'reviewed' ? 'block' : 'none'};">
-                                ${assignment.status === 'reviewed' ? `
+                            <div class="assignment-feedback" id="feedback-${assignment.assignment_id}" style="display: ${assignment.status === "reviewed" ? "block" : "none"};">
+                                ${
+                                  assignment.status === "reviewed"
+                                    ? `
                                     <div class="feedback-summary">
                                         <span class="feedback-stat errors">
                                             <i class="fas fa-times-circle"></i> ${assignment.errors_count || 0} Errors
@@ -588,193 +1184,236 @@
                                         <h4><i class="fas fa-comment"></i> Review Summary</h4>
                                         <p>Assignment has been reviewed and analyzed.</p>
                                     </div>
-                                ` : ''}
+                                `
+                                    : ""
+                                }
                             </div>
                         </div>
                     `;
-                });
+          });
 
-                container.innerHTML = html;
+          container.innerHTML = html;
 
-                // Re-attach event listeners
-                document.querySelectorAll(".open-analyzer").forEach((btn) => {
-                    btn.addEventListener("click", openAnalyzer);
-                });
+          // Re-attach event listeners
+          document.querySelectorAll(".open-analyzer").forEach((btn) => {
+            btn.addEventListener("click", openAnalyzer);
+          });
+        }
+
+        async function openAnalyzer(event) {
+          const btn = event.currentTarget;
+          const assignmentId = btn.dataset.assignment;
+
+          const assignmentCard = document.querySelector(
+            `[data-assignment-id="${assignmentId}"]`,
+          );
+          const assignmentTitle =
+            assignmentCard?.querySelector("h3")?.textContent || assignmentId;
+          const repoUrl = assignmentCard?.dataset.repoUrl;
+
+          document.getElementById("modalAssignmentTitle").textContent =
+            assignmentTitle;
+          currentAssignment = assignmentId;
+
+          document.getElementById("syntaxModal").classList.add("active");
+          showLoading("Initializing analysis...");
+
+          try {
+            const healthCheck = await safeFetchJson(
+              `${API_BASE_URL}/api/health`,
+            );
+            if (!healthCheck.success) {
+              showError(
+                `Cannot connect to server at ${API_BASE_URL}. Make sure the backend is running.`,
+              );
+              return;
             }
 
-            async function openAnalyzer(event) {
-                const btn = event.currentTarget;
-                const assignmentId = btn.dataset.assignment;
-                
-                const assignmentCard = document.querySelector(`[data-assignment-id="${assignmentId}"]`);
-                const assignmentTitle = assignmentCard?.querySelector('h3')?.textContent || assignmentId;
-                const repoUrl = assignmentCard?.dataset.repoUrl;
-                
-                document.getElementById('modalAssignmentTitle').textContent = assignmentTitle;
-                currentAssignment = assignmentId;
-                
-                document.getElementById("syntaxModal").classList.add("active");
-                showLoading("Initializing analysis...");
-                
-                try {
-                    const healthCheck = await safeFetchJson(`${API_BASE_URL}/api/health`);
-                    if (!healthCheck.success) {
-                        showError(`Cannot connect to server at ${API_BASE_URL}. Make sure the backend is running.`);
-                        return;
-                    }
-                    
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/submit-repo`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            assignment_id: assignmentId,
-                            repo_url: repoUrl,
-                            student_id: STUDENT_ID,
-                        }),
-                    });
-                    
-                    if (result.success && result.data.success) {
-                        currentSubmissionId = result.data.submission_id;
-                        startPollingAnalysis(currentSubmissionId);
-                        await loadAnalyzedFiles(currentSubmissionId);
-                    } else {
-                        showError(result.data?.error || "Failed to start analysis");
-                    }
-                } catch (error) {
-                    showError("Error: " + error.message);
-                }
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/submit-repo`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  assignment_id: assignmentId,
+                  repo_url: repoUrl,
+                  student_id: STUDENT_ID,
+                }),
+              },
+            );
+
+            if (result.success && result.data.success) {
+              currentSubmissionId = result.data.submission_id;
+              startPollingAnalysis(currentSubmissionId);
+              await loadAnalyzedFiles(currentSubmissionId);
+            } else {
+              showError(result.data?.error || "Failed to start analysis");
+            }
+          } catch (error) {
+            showError("Error: " + error.message);
+          }
+        }
+
+        async function safeFetchJson(url, options = {}) {
+          try {
+            const response = await fetch(url, options);
+
+            if (!response.ok) {
+              const text = await response.text();
+              throw new Error(
+                `HTTP ${response.status}: ${text.substring(0, 100)}`,
+              );
             }
 
-            async function safeFetchJson(url, options = {}) {
-                try {
-                    const response = await fetch(url, options);
-                    
-                    if (!response.ok) {
-                        const text = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
-                    }
-                    
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        const text = await response.text();
-                        console.error('Non-JSON response:', text.substring(0, 200));
-                        throw new Error('Server returned non-JSON response');
-                    }
-                    
-                    const data = await response.json();
-                    return { success: true, data };
-                } catch (error) {
-                    console.error('Fetch error:', error);
-                    return { success: false, error: error.message };
-                }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+              const text = await response.text();
+              console.error("Non-JSON response:", text.substring(0, 200));
+              throw new Error("Server returned non-JSON response");
             }
 
-            function showError(message) {
-                console.error('Error:', message);
-                
-                const loadingEl = document.getElementById('analysisLoading');
-                if (loadingEl) loadingEl.remove();
-                
-                const toast = document.createElement('div');
-                toast.className = 'error-toast';
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 5000);
-                
-                const fileListEl = document.getElementById("fileList");
-                if (fileListEl) {
-                    fileListEl.innerHTML = `
+            const data = await response.json();
+            return { success: true, data };
+          } catch (error) {
+            console.error("Fetch error:", error);
+            return { success: false, error: error.message };
+          }
+        }
+
+        function showError(message) {
+          console.error("Error:", message);
+
+          const loadingEl = document.getElementById("analysisLoading");
+          if (loadingEl) loadingEl.remove();
+
+          const toast = document.createElement("div");
+          toast.className = "error-toast";
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 5000);
+
+          const fileListEl = document.getElementById("fileList");
+          if (fileListEl) {
+            fileListEl.innerHTML = `
                         <div style="padding: 20px; text-align: center; color: var(--accent-red);">
                             <i class="fas fa-exclamation-triangle"></i> Error: ${message}
                         </div>
                     `;
-                }
-            }
+          }
+        }
 
-            function showSuccess(message) {
-                const toast = document.createElement('div');
-                toast.className = 'success-toast';
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
-            }
+        function showSuccess(message) {
+          const toast = document.createElement("div");
+          toast.className = "success-toast";
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+        }
 
-            function showLoading(message) {
-                const existingLoading = document.getElementById('analysisLoading');
-                if (existingLoading) existingLoading.remove();
-                
-                const modalBody = document.querySelector('.modal-body');
-                const loadingOverlay = document.createElement('div');
-                loadingOverlay.className = 'loading-overlay';
-                loadingOverlay.id = 'analysisLoading';
-                loadingOverlay.innerHTML = `
+        function showLoading(message) {
+          const existingLoading = document.getElementById("analysisLoading");
+          if (existingLoading) existingLoading.remove();
+
+          const modalBody = document.querySelector(".modal-body");
+          const loadingOverlay = document.createElement("div");
+          loadingOverlay.className = "loading-overlay";
+          loadingOverlay.id = "analysisLoading";
+          loadingOverlay.innerHTML = `
                     <div class="spinner"></div>
                     <div class="loading-text">${message}</div>
                 `;
-                modalBody.appendChild(loadingOverlay);
-            }
+          modalBody.appendChild(loadingOverlay);
+        }
 
-            function updateStatusCounts() {
-                const totalAssignments = document.querySelectorAll('.assignment-card').length;
-                const completedAssignments = document.querySelectorAll('.status-badge.checked').length;
-                const pendingAssignments = totalAssignments - completedAssignments;
-                
-                document.getElementById('pendingCount').textContent = pendingAssignments;
-                document.getElementById('completedCount').textContent = completedAssignments;
-            }
+        function updateStatusCounts() {
+          const totalAssignments =
+            document.querySelectorAll(".assignment-card").length;
+          const completedAssignments = document.querySelectorAll(
+            ".status-badge.checked",
+          ).length;
+          const pendingAssignments = totalAssignments - completedAssignments;
 
-            function closeModal() {
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
+          document.getElementById("pendingCount").textContent =
+            pendingAssignments;
+          document.getElementById("completedCount").textContent =
+            completedAssignments;
+        }
+
+        function closeModal() {
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+          document.getElementById("syntaxModal").classList.remove("active");
+        }
+
+        // Poll for analysis status
+        function startPollingAnalysis(submissionId) {
+          if (pollingInterval) clearInterval(pollingInterval);
+
+          pollingInterval = setInterval(async () => {
+            try {
+              const result = await safeFetchJson(
+                `${API_BASE_URL}/api/analysis/${submissionId}`,
+              );
+
+              if (result.success && result.data.submission) {
+                const submission = result.data.submission;
+
+                // Update progress
+                updateAnalysisProgress(submission);
+
+                // If analysis completed, stop polling and HIDE LOADING
+                if (
+                  submission.status === "completed" ||
+                  submission.status === "failed"
+                ) {
+                  clearInterval(pollingInterval);
+                  pollingInterval = null;
+
+                  // Remove progress bar
+                  const progressEl =
+                    document.querySelector(".analysis-progress");
+                  if (progressEl) progressEl.remove();
+
+                  // *** THIS IS THE KEY FIX - Hide the loading overlay ***
+                  const loadingEl = document.getElementById("analysisLoading");
+                  if (loadingEl) {
+                    loadingEl.remove();
+                    console.log(
+                      "✅ Loading overlay removed - analysis complete",
+                    );
+                  }
+
+                  if (submission.status === "completed") {
+                    // Load final results
+                    await loadAnalyzedFiles(submissionId);
+                    showSuccess(
+                      `Analysis completed! Found ${submission.errors_count || 0} errors, ${submission.warnings_count || 0} warnings.`,
+                    );
+                  } else if (submission.status === "failed") {
+                    showError(submission.error || "Analysis failed");
+                  }
                 }
-                document.getElementById("syntaxModal").classList.remove("active");
+              }
+            } catch (error) {
+              console.error("Polling error:", error);
             }
+          }, 2000); // Poll every 2 seconds
+        }
 
-            function startPollingAnalysis(submissionId) {
-                if (pollingInterval) clearInterval(pollingInterval);
-                
-                pollingInterval = setInterval(async () => {
-                    try {
-                        const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
-                        
-                        if (result.success && result.data.submission) {
-                            const submission = result.data.submission;
-                            
-                            updateAnalysisProgress(submission);
-                            
-                            if (submission.status === 'completed' || submission.status === 'failed') {
-                                clearInterval(pollingInterval);
-                                pollingInterval = null;
-                                
-                                const progressEl = document.querySelector('.analysis-progress');
-                                if (progressEl) progressEl.remove();
-                                
-                                if (submission.status === 'completed') {
-                                    await loadAnalyzedFiles(submissionId);
-                                    showSuccess(`Analysis completed! Found ${submission.errors_count || 0} errors, ${submission.warnings_count || 0} warnings.`);
-                                } else if (submission.status === 'failed') {
-                                    showError(submission.error || "Analysis failed");
-                                }
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Polling error:", error);
-                    }
-                }, 2000);
-            }
+        function updateAnalysisProgress(submission) {
+          const existingProgress = document.querySelector(".analysis-progress");
+          if (existingProgress) existingProgress.remove();
 
-            function updateAnalysisProgress(submission) {
-                const existingProgress = document.querySelector('.analysis-progress');
-                if (existingProgress) existingProgress.remove();
-                
-                const totalFiles = submission.total_files || 0;
-                const analyzedFiles = submission.analyzed_files || 0;
-                const progress = totalFiles > 0 ? (analyzedFiles / totalFiles * 100) : 0;
-                
-                const progressEl = document.createElement('div');
-                progressEl.className = 'analysis-progress';
-                progressEl.innerHTML = `
+          const totalFiles = submission.total_files || 0;
+          const analyzedFiles = submission.analyzed_files || 0;
+          const progress =
+            totalFiles > 0 ? (analyzedFiles / totalFiles) * 100 : 0;
+
+          const progressEl = document.createElement("div");
+          progressEl.className = "analysis-progress";
+          progressEl.innerHTML = `
                     <div class="progress-info">
                         <span><i class="fas fa-spinner fa-spin"></i> Analyzing files...</span>
                         <span>${analyzedFiles}/${totalFiles}</span>
@@ -783,338 +1422,371 @@
                         <div class="progress-bar-fill" style="width: ${progress}%"></div>
                     </div>
                 `;
-                
-                document.querySelector('.modal-header').appendChild(progressEl);
-            }
 
-            async function loadAnalyzedFiles(submissionId) {
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/files/${submissionId}`);
-                    
-                    if (result.success && result.data.success) {
-                        fileList = result.data.files || [];
-                        
-                        if (fileList.length === 0) {
-                            const fileListEl = document.getElementById("fileList");
-                            fileListEl.innerHTML = `
+          document.querySelector(".modal-header").appendChild(progressEl);
+        }
+
+        async function loadAnalyzedFiles(submissionId) {
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/files/${submissionId}`,
+            );
+
+            if (result.success && result.data.success) {
+              fileList = result.data.files || [];
+
+              if (fileList.length === 0) {
+                const fileListEl = document.getElementById("fileList");
+                fileListEl.innerHTML = `
                                 <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
                                     <i class="fas fa-info-circle"></i> No C/C++ files found in repository
                                 </div>
                             `;
-                            return;
-                        }
-                        
-                        renderFileList();
-                        
-                        if (fileList.length > 0) {
-                            await loadFileWithResults(0, submissionId);
-                        }
-                    } else {
-                        showError(result.error || "Failed to load files");
-                    }
-                } catch (error) {
-                    console.error("Error loading files:", error);
-                    showError("Failed to load files: " + error.message);
-                }
+                return;
+              }
+
+              renderFileList();
+
+              if (fileList.length > 0) {
+                await loadFileWithResults(0, submissionId);
+              }
+            } else {
+              showError(result.error || "Failed to load files");
+            }
+          } catch (error) {
+            console.error("Error loading files:", error);
+            showError("Failed to load files: " + error.message);
+          }
+        }
+
+        // Load file with analysis results
+        async function loadFileWithResults(index, submissionId) {
+          if (index < 0 || index >= fileList.length) return;
+
+          currentFileIndex = index;
+          const file = fileList[index];
+
+          try {
+            // Get analysis details for this file
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/analysis/${submissionId}`,
+            );
+
+            if (result.success && result.data.files) {
+              const fileResult = result.data.files.find(
+                (f) => f.file_path === file.file_path,
+              );
+              if (fileResult) {
+                currentErrors = fileResult.errors || [];
+                currentWarnings = fileResult.warnings || [];
+
+                // Update file analysis status
+                fileAnalysisStatus[file.file_path] = {
+                  errors: currentErrors.length,
+                  warnings: currentWarnings.length,
+                };
+
+                updateErrorPanel();
+                renderFileList();
+              }
             }
 
-            async function loadFileWithResults(index, submissionId) {
-                if (index < 0 || index >= fileList.length) return;
-                
-                currentFileIndex = index;
-                const file = fileList[index];
-                
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
-                    
-                    if (result.success && result.data.files) {
-                        const fileResult = result.data.files.find(f => f.file_path === file.file_path);
-                        if (fileResult) {
-                            currentErrors = fileResult.errors || [];
-                            currentWarnings = fileResult.warnings || [];
-                            
-                            fileAnalysisStatus[file.file_path] = {
-                                errors: currentErrors.length,
-                                warnings: currentWarnings.length
-                            };
-                            
-                            updateErrorPanel();
-                            renderFileList();
-                        }
-                    }
-                    
-                    document.getElementById("currentFileName").textContent = file.file_name || file.name || 'Unknown';
-                    document.getElementById("languageBadge").textContent = file.language || 'c';
-                    
-                    const sampleCode = `// File: ${file.file_path || 'Unknown'}
-// Language: ${file.language || 'C/C++'}
-// Status: ${fileAnalysisStatus[file.file_path]?.errors > 0 ? 'Has errors' : 'No errors'}
+            // Update toolbar
+            document.getElementById("currentFileName").textContent =
+              file.file_name || file.name || "Unknown";
+            document.getElementById("languageBadge").textContent =
+              file.language || "c";
+
+            // Make sure loading is hidden
+            const loadingEl = document.getElementById("analysisLoading");
+            if (loadingEl) {
+              loadingEl.remove();
+            }
+
+            // Show file content
+            const sampleCode = `// File: ${file.file_path || "Unknown"}
+// Language: ${file.language || "C/C++"}
+// Status: ${fileAnalysisStatus[file.file_path]?.errors > 0 ? "Has errors" : "No errors"}
 
 #include <stdio.h>
 
 int main() {
     printf("Hello, World!\\n");
-    
-    // Sample code with potential issues
-    int x = 10;
-    int y;  // Warning: uninitialized variable
-    
-    if (x = 5) {  // Error: assignment in condition
-        printf("x is 5\\n");
-    }
-    
     return 0;
 }`;
-                    
-                    displayCode(sampleCode, file.language || 'c');
-                    
-                } catch (error) {
-                    console.error("Error loading file results:", error);
-                }
-            }
 
-            function renderFileList(filter = "") {
-                const fileListEl = document.getElementById("fileList");
-                
-                if (!fileList || fileList.length === 0) {
-                    fileListEl.innerHTML = `
+            displayCode(sampleCode, file.language || "c");
+          } catch (error) {
+            console.error("Error loading file results:", error);
+          }
+        }
+
+        function renderFileList(filter = "") {
+          const fileListEl = document.getElementById("fileList");
+
+          if (!fileList || fileList.length === 0) {
+            fileListEl.innerHTML = `
                         <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
                             <i class="fas fa-info-circle"></i> No files available
                         </div>
                     `;
-                    return;
+            return;
+          }
+
+          const filteredFiles = filter
+            ? fileList.filter((f) =>
+                (f.file_name || f.name || "")
+                  .toLowerCase()
+                  .includes(filter.toLowerCase()),
+              )
+            : fileList;
+
+          fileListEl.innerHTML = filteredFiles
+            .map((file, index) => {
+              const originalIndex = fileList.findIndex(
+                (f) => f.file_path === file.file_path,
+              );
+              const status = fileAnalysisStatus[file.file_path];
+              let statusClass = "";
+              let statusIcon = "";
+
+              if (status) {
+                if (status.errors > 0) {
+                  statusClass = "has-errors";
+                  statusIcon =
+                    '<i class="fas fa-times-circle file-status-icon" style="color: var(--accent-red);"></i>';
+                } else if (status.warnings > 0) {
+                  statusClass = "has-warnings";
+                  statusIcon =
+                    '<i class="fas fa-exclamation-circle file-status-icon" style="color: var(--accent-yellow);"></i>';
+                } else {
+                  statusClass = "checked";
+                  statusIcon =
+                    '<i class="fas fa-check-circle file-status-icon" style="color: var(--accent-green);"></i>';
                 }
-                
-                const filteredFiles = filter
-                    ? fileList.filter((f) =>
-                        (f.file_name || f.name || "").toLowerCase().includes(filter.toLowerCase()),
-                      )
-                    : fileList;
+              }
 
-                fileListEl.innerHTML = filteredFiles
-                    .map((file, index) => {
-                        const originalIndex = fileList.findIndex(f => f.file_path === file.file_path);
-                        const status = fileAnalysisStatus[file.file_path];
-                        let statusClass = "";
-                        let statusIcon = "";
+              const fileName =
+                file.file_name ||
+                file.name ||
+                file.file_path?.split("/").pop() ||
+                "Unknown";
 
-                        if (status) {
-                            if (status.errors > 0) {
-                                statusClass = "has-errors";
-                                statusIcon = '<i class="fas fa-times-circle file-status-icon" style="color: var(--accent-red);"></i>';
-                            } else if (status.warnings > 0) {
-                                statusClass = "has-warnings";
-                                statusIcon = '<i class="fas fa-exclamation-circle file-status-icon" style="color: var(--accent-yellow);"></i>';
-                            } else {
-                                statusClass = "checked";
-                                statusIcon = '<i class="fas fa-check-circle file-status-icon" style="color: var(--accent-green);"></i>';
-                            }
-                        }
-
-                        const fileName = file.file_name || file.name || file.file_path?.split('/').pop() || 'Unknown';
-
-                        return `
+              return `
                             <div class="file-item ${statusClass} ${originalIndex === currentFileIndex ? "active" : ""}" onclick="window.loadFile(${originalIndex})">
                                 <i class="fas fa-file-code file-icon"></i>
                                 <span class="file-name" title="${file.file_path || fileName}">${fileName}</span>
                                 ${statusIcon}
                             </div>
                         `;
-                    })
-                    .join("");
-            }
+            })
+            .join("");
+        }
 
-            function loadFile(index) {
-                if (index < 0 || index >= fileList.length) return;
-                
-                currentFileIndex = index;
-                const file = fileList[index];
-                
-                document.querySelectorAll(".file-item").forEach((el, i) => {
-                    const filePath = fileList[i]?.file_path;
-                    el.classList.toggle("active", filePath === file.file_path);
-                });
-                
-                document.getElementById("currentFileName").textContent = file.file_name || file.name || 'Unknown';
-                document.getElementById("languageBadge").textContent = file.language || 'c';
-                
-                document.getElementById("codeLoading").classList.remove("hidden");
-                
-                setTimeout(() => {
-                    const status = fileAnalysisStatus[file.file_path];
-                    
-                    const sampleCode = `// File: ${file.file_path || 'Unknown'}
-// Language: ${file.language || 'C/C++'}
+        // Load file function
+        function loadFile(index) {
+          if (index < 0 || index >= fileList.length) return;
+
+          currentFileIndex = index;
+          const file = fileList[index];
+
+          // Update active state in file list
+          document.querySelectorAll(".file-item").forEach((el, i) => {
+            const filePath = fileList[i]?.file_path;
+            el.classList.toggle("active", filePath === file.file_path);
+          });
+
+          // Update toolbar
+          document.getElementById("currentFileName").textContent =
+            file.file_name || file.name || "Unknown";
+          document.getElementById("languageBadge").textContent =
+            file.language || "c";
+
+          // Show loading for file content
+          document.getElementById("codeLoading").classList.remove("hidden");
+
+          setTimeout(() => {
+            // Get errors for this file
+            const status = fileAnalysisStatus[file.file_path];
+
+            const sampleCode = `// File: ${file.file_path || "Unknown"}
+// Language: ${file.language || "C/C++"}
 // Errors: ${status?.errors || 0}, Warnings: ${status?.warnings || 0}
 
 #include <stdio.h>
 
 int main() {
     printf("Hello, World!\\n");
-    
-    // Sample code with potential issues
-    int x = 10;
-    int y;  // Warning: uninitialized variable
-    
-    if (x = 5) {  // Error: assignment in condition
-        printf("x is 5\\n");
-    }
-    
     return 0;
 }`;
-                    
-                    displayCode(sampleCode, file.language || 'c');
-                    document.getElementById("codeLoading").classList.add("hidden");
-                }, 500);
+
+            displayCode(sampleCode, file.language || "c");
+            document.getElementById("codeLoading").classList.add("hidden");
+
+            // Also hide the main analysis loading if it's still there
+            const analysisLoading = document.getElementById("analysisLoading");
+            if (analysisLoading) {
+              analysisLoading.remove();
             }
+          }, 500);
+        }
 
-            function displayCode(code, language) {
-                const lines = code.split("\n");
-                const lineNumbersEl = document.getElementById("lineNumbers");
-                const codeContentEl = document.getElementById("codeContent");
+        function displayCode(code, language) {
+          const lines = code.split("\n");
+          const lineNumbersEl = document.getElementById("lineNumbers");
+          const codeContentEl = document.getElementById("codeContent");
 
-                let lineNumbersHtml = "";
-                let codeHtml = "";
+          let lineNumbersHtml = "";
+          let codeHtml = "";
 
-                lines.forEach((line, i) => {
-                    lineNumbersHtml += `<div>${i + 1}</div>`;
+          lines.forEach((line, i) => {
+            lineNumbersHtml += `<div>${i + 1}</div>`;
 
-                    const hasError = currentErrors.some((e) => e.line === i + 1);
-                    const hasWarning = currentWarnings.some((w) => w.line === i + 1);
+            const hasError = currentErrors.some((e) => e.line === i + 1);
+            const hasWarning = currentWarnings.some((w) => w.line === i + 1);
 
-                    let lineClass = "code-line";
-                    if (hasError) lineClass += " error-line";
-                    else if (hasWarning) lineClass += " warning-line";
+            let lineClass = "code-line";
+            if (hasError) lineClass += " error-line";
+            else if (hasWarning) lineClass += " warning-line";
 
-                    codeHtml += `<div class="${lineClass}">${escapeHtml(line)}</div>`;
-                });
+            codeHtml += `<div class="${lineClass}">${escapeHtml(line)}</div>`;
+          });
 
-                lineNumbersEl.innerHTML = lineNumbersHtml;
-                codeContentEl.innerHTML = codeHtml;
-            }
+          lineNumbersEl.innerHTML = lineNumbersHtml;
+          codeContentEl.innerHTML = codeHtml;
+        }
 
-            function escapeHtml(text) {
-                const div = document.createElement("div");
-                div.textContent = text;
-                return div.innerHTML;
-            }
+        function escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        }
 
-            function updateErrorPanel() {
-                const errorListEl = document.getElementById("errorList");
-                const errorCountEl = document.getElementById("errorCount");
-                const warningCountEl = document.getElementById("warningCount");
+        function updateErrorPanel() {
+          const errorListEl = document.getElementById("errorList");
+          const errorCountEl = document.getElementById("errorCount");
+          const warningCountEl = document.getElementById("warningCount");
 
-                errorCountEl.textContent = currentErrors.length;
-                warningCountEl.textContent = currentWarnings.length;
+          errorCountEl.textContent = currentErrors.length;
+          warningCountEl.textContent = currentWarnings.length;
 
-                if (currentErrors.length === 0 && currentWarnings.length === 0) {
-                    errorListEl.innerHTML = `
+          if (currentErrors.length === 0 && currentWarnings.length === 0) {
+            errorListEl.innerHTML = `
                         <div class="no-errors">
                             <i class="fas fa-check-circle"></i>
                             <div>No issues found!</div>
                         </div>
                     `;
-                    return;
-                }
+            return;
+          }
 
-                let html = '';
-                
-                currentErrors.forEach((err) => {
-                    html += `
+          let html = "";
+
+          currentErrors.forEach((err) => {
+            html += `
                         <div class="error-item">
                             <div class="error-line-num">Line ${err.line || 0}</div>
-                            <div class="error-message">${escapeHtml(err.message || 'Unknown error')}</div>
+                            <div class="error-message">${escapeHtml(err.message || "Unknown error")}</div>
                         </div>
                     `;
-                });
+          });
 
-                currentWarnings.forEach((warn) => {
-                    html += `
+          currentWarnings.forEach((warn) => {
+            html += `
                         <div class="error-item warning">
                             <div class="error-line-num">Line ${warn.line || 0}</div>
-                            <div class="error-message">${escapeHtml(warn.message || 'Unknown warning')}</div>
+                            <div class="error-message">${escapeHtml(warn.message || "Unknown warning")}</div>
                         </div>
                     `;
-                });
-                
-                errorListEl.innerHTML = html;
-            }
+          });
 
-            function previousFile() {
-                if (currentFileIndex > 0) {
-                    loadFile(currentFileIndex - 1);
-                }
-            }
+          errorListEl.innerHTML = html;
+        }
 
-            function nextFile() {
-                if (currentFileIndex < fileList.length - 1) {
-                    loadFile(currentFileIndex + 1);
-                }
-            }
+        function previousFile() {
+          if (currentFileIndex > 0) {
+            loadFile(currentFileIndex - 1);
+          }
+        }
 
-            async function saveFeedbackAndDone() {
-                const feedback = document.getElementById("feedbackText").value;
-                
-                if (!currentSubmissionId) {
-                    showError("No active analysis session");
-                    return;
-                }
-                
-                const loadingEl = document.getElementById('analysisLoading');
-                if (loadingEl) loadingEl.remove();
-                
-                showLoading("Saving feedback...");
-                
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/save-feedback`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            submission_id: currentSubmissionId,
-                            feedback: feedback,
-                            reviewer_id: "instructor1"
-                        }),
-                    });
-                    
-                    const loading = document.getElementById('analysisLoading');
-                    if (loading) loading.remove();
-                    
-                    if (result.success && result.data.success) {
-                        await updateAssignmentCardWithResults(currentSubmissionId);
-                        
-                        showSuccess("Review completed! All files have been analyzed.");
-                        closeModal();
-                        
-                        // Reload assignments to get updated status
-                        await loadAssignments();
-                        updateStatusCounts();
-                    } else {
-                        showError(result.error || "Failed to save feedback");
-                    }
-                } catch (error) {
-                    showError("Error saving feedback: " + error.message);
-                }
-            }
+        function nextFile() {
+          if (currentFileIndex < fileList.length - 1) {
+            loadFile(currentFileIndex + 1);
+          }
+        }
 
-            async function updateAssignmentCardWithResults(submissionId) {
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
-                    
-                    if (result.success && result.data.submission) {
-                        const submission = result.data.submission;
-                        const assignmentId = submission.assignment_id;
-                        
-                        const statusEl = document.getElementById(`status-${assignmentId}`);
-                        const feedbackContainer = document.querySelector(`[data-assignment-id="${assignmentId}"] .assignment-feedback`);
-                        
-                        if (statusEl) {
-                            statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
-                            statusEl.className = "status-badge checked";
-                        }
-                        
-                        if (feedbackContainer) {
-                            feedbackContainer.style.display = "block";
-                            feedbackContainer.innerHTML = `
+        async function saveFeedbackAndDone() {
+          const feedback = document.getElementById("feedbackText").value;
+
+          if (!currentSubmissionId) {
+            showError("No active analysis session");
+            return;
+          }
+
+          const loadingEl = document.getElementById("analysisLoading");
+          if (loadingEl) loadingEl.remove();
+
+          showLoading("Saving feedback...");
+
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/save-feedback`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  submission_id: currentSubmissionId,
+                  feedback: feedback,
+                  reviewer_id: "instructor1",
+                }),
+              },
+            );
+
+            const loading = document.getElementById("analysisLoading");
+            if (loading) loading.remove();
+
+            if (result.success && result.data.success) {
+              await updateAssignmentCardWithResults(currentSubmissionId);
+
+              showSuccess("Review completed! All files have been analyzed.");
+              closeModal();
+
+              // Reload assignments to get updated status
+              await loadAssignments();
+              updateStatusCounts();
+            } else {
+              showError(result.error || "Failed to save feedback");
+            }
+          } catch (error) {
+            showError("Error saving feedback: " + error.message);
+          }
+        }
+
+        async function updateAssignmentCardWithResults(submissionId) {
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/analysis/${submissionId}`,
+            );
+
+            if (result.success && result.data.submission) {
+              const submission = result.data.submission;
+              const assignmentId = submission.assignment_id;
+
+              const statusEl = document.getElementById(
+                `status-${assignmentId}`,
+              );
+              const feedbackContainer = document.querySelector(
+                `[data-assignment-id="${assignmentId}"] .assignment-feedback`,
+              );
+
+              if (statusEl) {
+                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
+                statusEl.className = "status-badge checked";
+              }
+
+              if (feedbackContainer) {
+                feedbackContainer.style.display = "block";
+                feedbackContainer.innerHTML = `
                                 <div class="feedback-summary">
                                     <span class="feedback-stat errors">
                                         <i class="fas fa-times-circle"></i> ${submission.errors_count || 0} Errors
@@ -1131,39 +1803,43 @@ int main() {
                                     <p>Analysis completed automatically. All files have been checked.</p>
                                 </div>
                             `;
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error updating card:", error);
-                }
+              }
             }
+          } catch (error) {
+            console.error("Error updating card:", error);
+          }
+        }
 
-            // Event Listeners
-            document.getElementById("fileSearch").addEventListener("input", (e) => {
-                renderFileList(e.target.value);
-            });
+        // Event Listeners
+        document.getElementById("fileSearch").addEventListener("input", (e) => {
+          renderFileList(e.target.value);
+        });
 
-            document.getElementById("syntaxModal").addEventListener("click", (e) => {
-                if (e.target === document.getElementById("syntaxModal")) {
-                    closeModal();
-                }
-            });
+        document
+          .getElementById("syntaxModal")
+          .addEventListener("click", (e) => {
+            if (e.target === document.getElementById("syntaxModal")) {
+              closeModal();
+            }
+          });
 
-            document.addEventListener("keydown", (e) => {
-                if (document.getElementById("syntaxModal").classList.contains("active")) {
-                    if (e.key === "Escape") closeModal();
-                    if (e.key === "ArrowLeft") previousFile();
-                    if (e.key === "ArrowRight") nextFile();
-                }
-            });
+        document.addEventListener("keydown", (e) => {
+          if (
+            document.getElementById("syntaxModal").classList.contains("active")
+          ) {
+            if (e.key === "Escape") closeModal();
+            if (e.key === "ArrowLeft") previousFile();
+            if (e.key === "ArrowRight") nextFile();
+          }
+        });
 
-            // Expose functions to window
-            window.closeModal = closeModal;
-            window.loadFile = loadFile;
-            window.previousFile = previousFile;
-            window.nextFile = nextFile;
-            window.saveFeedbackAndDone = saveFeedbackAndDone;
-        })();
+        // Expose functions to window
+        window.closeModal = closeModal;
+        window.loadFile = loadFile;
+        window.previousFile = previousFile;
+        window.nextFile = nextFile;
+        window.saveFeedbackAndDone = saveFeedbackAndDone;
+      })();
     </script>
-</body>
+  </body>
 </html>
