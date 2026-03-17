@@ -1092,12 +1092,142 @@
 
             if (result.success && result.data.success) {
               renderAssignments(result.data.assignments);
+
+              // For each assignment that's already checked, load its feedback
+              const checkedAssignments = result.data.assignments.filter(
+                (a) => a.status === "reviewed" || a.status === "completed",
+              );
+              for (const assignment of checkedAssignments) {
+                if (assignment.submission_id) {
+                  const analysisResult = await safeFetchJson(
+                    `${API_BASE_URL}/api/analysis/${assignment.submission_id}`,
+                  );
+                  if (analysisResult.success) {
+                    const files = analysisResult.data.files || [];
+                    let totalErrors = 0;
+                    let totalWarnings = 0;
+                    let fileNames = [];
+
+                    files.forEach((file) => {
+                      totalErrors += file.errors?.length || 0;
+                      totalWarnings += file.warnings?.length || 0;
+                      if (file.file_name) {
+                        fileNames.push(file.file_name);
+                      }
+                    });
+
+                    // Get feedback from review if exists
+                    const feedback = analysisResult.data.review?.feedback || "";
+
+                    // Update the card with existing data
+                    updateExistingAssignmentCard(
+                      assignment.assignment_id,
+                      totalErrors,
+                      totalWarnings,
+                      fileNames,
+                      feedback,
+                    );
+                  }
+                }
+              }
+
               updateStatusCounts();
             } else {
               showError("Failed to load assignments");
             }
           } catch (error) {
             showError("Error loading assignments: " + error.message);
+          }
+        }
+
+        function updateExistingAssignmentCard(
+          assignmentId,
+          totalErrors,
+          totalWarnings,
+          fileList,
+          feedback,
+        ) {
+          const assignmentCard = document.querySelector(
+            `[data-assignment-id="${assignmentId}"]`,
+          );
+          const statusEl = document.getElementById(`status-${assignmentId}`);
+          const actionBtn = assignmentCard?.querySelector(".open-analyzer");
+          const feedbackContainer = document.querySelector(
+            `[data-assignment-id="${assignmentId}"] .assignment-feedback`,
+          );
+
+          // Change button to "Review"
+          if (actionBtn) {
+            actionBtn.innerHTML = '<i class="fas fa-search"></i> Review';
+            actionBtn.classList.remove("btn-primary");
+            actionBtn.classList.add("btn-secondary");
+          }
+
+          // Update status badge
+          if (statusEl) {
+            statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
+            statusEl.className = "status-badge checked";
+          }
+
+          // Create detailed feedback display
+          if (feedbackContainer) {
+            feedbackContainer.style.display = "block";
+
+            const fileListHtml =
+              fileList && fileList.length > 0
+                ? `
+            <div style="margin-top: 15px;">
+                <strong style="color: var(--text-secondary);">Files Analyzed:</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                    ${fileList
+                      .map(
+                        (file) => `
+                        <span style="background: var(--bg-input); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; border: 1px solid var(--border);">
+                            <i class="fas fa-file-code" style="color: var(--accent-blue);"></i> ${file}
+                        </span>
+                    `,
+                      )
+                      .join("")}
+                </div>
+            </div>
+        `
+                : "";
+
+            feedbackContainer.innerHTML = `
+            <div class="feedback-summary">
+                <span class="feedback-stat errors">
+                    <i class="fas fa-times-circle"></i> ${totalErrors} Errors
+                </span>
+                <span class="feedback-stat warnings">
+                    <i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Warnings
+                </span>
+                <span class="feedback-stat status">
+                    <i class="fas fa-check"></i> ${fileList.length} Files
+                </span>
+            </div>
+            
+            ${
+              feedback
+                ? `
+                <div class="feedback-text">
+                    <h4><i class="fas fa-comment"></i> Professor's Feedback</h4>
+                    <p style="white-space: pre-wrap; background: var(--bg-input); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent-blue);">
+                        ${escapeHtml(feedback)}
+                    </p>
+                </div>
+            `
+                : ""
+            }
+            
+            ${fileListHtml}
+            
+            <div style="margin-top: 15px; padding: 10px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; gap: 10px; color: var(--accent-green);">
+                    <i class="fas fa-check-circle"></i>
+                    <span style="font-weight: 600;">Previously reviewed</span>
+                </div>
+            </div>
+        `;
           }
         }
 
@@ -1723,6 +1853,7 @@ int main() {
             return;
           }
 
+          // Remove loading if any
           const loadingEl = document.getElementById("analysisLoading");
           if (loadingEl) loadingEl.remove();
 
@@ -1742,11 +1873,42 @@ int main() {
               },
             );
 
+            // Remove loading
             const loading = document.getElementById("analysisLoading");
             if (loading) loading.remove();
 
             if (result.success && result.data.success) {
-              await updateAssignmentCardWithResults(currentSubmissionId);
+              // Get the latest analysis results
+              const analysisResult = await safeFetchJson(
+                `${API_BASE_URL}/api/analysis/${currentSubmissionId}`,
+              );
+
+              if (analysisResult.success) {
+                const submission = analysisResult.data.submission;
+                const files = analysisResult.data.files || [];
+
+                // Calculate total errors and warnings across all files
+                let totalErrors = 0;
+                let totalWarnings = 0;
+                let fileList = [];
+
+                files.forEach((file) => {
+                  totalErrors += file.errors?.length || 0;
+                  totalWarnings += file.warnings?.length || 0;
+                  if (file.file_name) {
+                    fileList.push(file.file_name);
+                  }
+                });
+
+                // Update assignment card with results
+                await updateAssignmentCardWithResults(
+                  currentSubmissionId,
+                  feedback,
+                  totalErrors,
+                  totalWarnings,
+                  fileList,
+                );
+              }
 
               showSuccess("Review completed! All files have been analyzed.");
               closeModal();
@@ -1762,7 +1924,13 @@ int main() {
           }
         }
 
-        async function updateAssignmentCardWithResults(submissionId) {
+        async function updateAssignmentCardWithResults(
+          submissionId,
+          feedback,
+          totalErrors,
+          totalWarnings,
+          fileList,
+        ) {
           try {
             const result = await safeFetchJson(
               `${API_BASE_URL}/api/analysis/${submissionId}`,
@@ -1772,37 +1940,91 @@ int main() {
               const submission = result.data.submission;
               const assignmentId = submission.assignment_id;
 
+              // Find the assignment card
+              const assignmentCard = document.querySelector(
+                `[data-assignment-id="${assignmentId}"]`,
+              );
               const statusEl = document.getElementById(
                 `status-${assignmentId}`,
               );
+              const actionBtn = assignmentCard?.querySelector(".open-analyzer");
               const feedbackContainer = document.querySelector(
                 `[data-assignment-id="${assignmentId}"] .assignment-feedback`,
               );
 
+              // Change button from "Open Syntax Analyzer" to "Review"
+              if (actionBtn) {
+                actionBtn.innerHTML = '<i class="fas fa-search"></i> Review';
+                actionBtn.classList.remove("btn-primary");
+                actionBtn.classList.add("btn-secondary");
+              }
+
+              // Update status badge
               if (statusEl) {
                 statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
                 statusEl.className = "status-badge checked";
               }
 
+              // Create detailed feedback display
               if (feedbackContainer) {
                 feedbackContainer.style.display = "block";
+
+                // Create file list HTML
+                const fileListHtml =
+                  fileList && fileList.length > 0
+                    ? `
+                    <div style="margin-top: 15px;">
+                        <strong style="color: var(--text-secondary);">Files Analyzed:</strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                            ${fileList
+                              .map(
+                                (file) => `
+                                <span style="background: var(--bg-input); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; border: 1px solid var(--border);">
+                                    <i class="fas fa-file-code" style="color: var(--accent-blue);"></i> ${file}
+                                </span>
+                            `,
+                              )
+                              .join("")}
+                        </div>
+                    </div>
+                `
+                    : "";
+
                 feedbackContainer.innerHTML = `
-                                <div class="feedback-summary">
-                                    <span class="feedback-stat errors">
-                                        <i class="fas fa-times-circle"></i> ${submission.errors_count || 0} Errors
-                                    </span>
-                                    <span class="feedback-stat warnings">
-                                        <i class="fas fa-exclamation-triangle"></i> ${submission.warnings_count || 0} Warnings
-                                    </span>
-                                    <span class="feedback-stat status">
-                                        <i class="fas fa-check"></i> ${submission.total_files || 0} Files
-                                    </span>
-                                </div>
-                                <div class="feedback-text">
-                                    <h4><i class="fas fa-comment"></i> Review Summary</h4>
-                                    <p>Analysis completed automatically. All files have been checked.</p>
-                                </div>
-                            `;
+                    <div class="feedback-summary">
+                        <span class="feedback-stat errors">
+                            <i class="fas fa-times-circle"></i> ${totalErrors} Errors
+                        </span>
+                        <span class="feedback-stat warnings">
+                            <i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Warnings
+                        </span>
+                        <span class="feedback-stat status">
+                            <i class="fas fa-check"></i> ${submission.total_files || 0} Files
+                        </span>
+                    </div>
+                    
+                    ${
+                      feedback
+                        ? `
+                        <div class="feedback-text">
+                            <h4><i class="fas fa-comment"></i> Professor's Feedback</h4>
+                            <p style="white-space: pre-wrap; background: var(--bg-input); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent-blue);">
+                                ${escapeHtml(feedback)}
+                            </p>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${fileListHtml}
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="display: flex; align-items: center; gap: 10px; color: var(--accent-green);">
+                            <i class="fas fa-check-circle"></i>
+                            <span style="font-weight: 600;">Review completed on ${new Date().toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `;
               }
             }
           } catch (error) {
