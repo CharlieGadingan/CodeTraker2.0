@@ -23,6 +23,11 @@
             --accent-red: #f85149;
             --accent-yellow: #d29922;
             --accent-purple: #bc8cff;
+            
+            /* Code viewer specific variables */
+            --line-height: 1.6;
+            --font-size: 14px;
+            --line-number-width: 60px;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -252,10 +257,6 @@
             background: rgba(63, 185, 80, 0.15);
             color: var(--accent-green);
         }
-        .status-badge.reviewed {
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-blue);
-        }
         .assignment-details {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -324,6 +325,9 @@
         .btn-success:hover {
             background: #36a346;
             transform: translateY(-2px);
+        }
+        .btn-success.hidden {
+            display: none;
         }
         /* Assignment Feedback Display */
         .assignment-feedback {
@@ -518,12 +522,13 @@
         .file-status-icon {
             font-size: 0.8rem;
         }
-        /* Code Area - FIXED: Line numbers scroll with code */
+        /* ========== IMPROVED CODE VIEWER ========== */
         .code-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            background: #1e1e1e;
         }
         .code-toolbar {
             background: var(--bg-input);
@@ -546,62 +551,103 @@
             background: rgba(188, 140, 255, 0.15);
             color: var(--accent-purple);
         }
-        /* FIXED: Code viewer with synchronized scrolling */
-        .code-viewer {
+        /* High-performance code viewer container */
+        .code-viewer-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            background: #1e1e1e;
+            height: 100%;
+        }
+        /* Virtual scroll container for better performance */
+        .code-scroll-container {
             flex: 1;
             display: flex;
             overflow: auto;
-            background: #1e1e1e;
             position: relative;
             height: 100%;
+            scroll-behavior: smooth;
+            will-change: transform;
         }
-        .line-numbers {
-            padding: 15px 10px;
+        /* Line numbers column - fixed width, scrolls with content */
+        .line-numbers-column {
+            flex-shrink: 0;
+            width: var(--line-number-width);
             background: #1e1e1e;
             color: #6e7681;
             text-align: right;
-            font-family: "JetBrains Mono", monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            user-select: none;
-            min-width: 50px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            padding: 15px 8px 15px 0;
             border-right: 1px solid #2d2d2d;
-            /* FIXED: This makes line numbers scroll with content */
-            overflow-y: hidden;
-            flex-shrink: 0;
-        }
-        .code-content {
-            flex: 1;
-            padding: 15px;
-            font-family: "JetBrains Mono", monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #d4d4d4;
+            user-select: none;
+            pointer-events: none;
             white-space: pre;
-            overflow-x: auto;
-            overflow-y: hidden;
+            overflow: visible;
         }
-        /* FIXED: Wrapper to ensure both scroll together */
-        .code-scroll-wrapper {
-            display: flex;
-            width: 100%;
-            overflow: auto;
-            height: 100%;
+        /* Code content column - scrolls with line numbers */
+        .code-content-column {
+            flex: 1;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            color: #d4d4d4;
+            padding: 15px 0 15px 15px;
+            white-space: pre;
+            overflow: visible;
         }
+        /* Individual line styling */
         .code-line {
             display: block;
+            height: calc(var(--font-size) * var(--line-height));
+            white-space: pre;
         }
         .code-line.error-line {
             background: rgba(248, 81, 73, 0.2);
             border-left: 3px solid var(--accent-red);
-            margin-left: -3px;
-            padding-left: 10px;
+            padding-left: 12px;
+            margin-left: -15px;
         }
         .code-line.warning-line {
             background: rgba(210, 153, 34, 0.2);
             border-left: 3px solid var(--accent-yellow);
-            margin-left: -3px;
-            padding-left: 10px;
+            padding-left: 12px;
+            margin-left: -15px;
+        }
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(13, 17, 23, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .loading-overlay.hidden {
+            display: none;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 15px;
+            color: var(--text-secondary);
+            font-size: 1rem;
         }
         /* Error Panel */
         .error-panel {
@@ -710,41 +756,6 @@
             justify-content: flex-end;
             gap: 10px;
         }
-        /* Loading States */
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(13, 17, 23, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        .loading-overlay.hidden {
-            display: none;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border);
-            border-top-color: var(--accent-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        .loading-text {
-            margin-top: 15px;
-            color: var(--text-secondary);
-            font-size: 1rem;
-        }
         /* Analysis Progress */
         .analysis-progress {
             position: absolute;
@@ -803,10 +814,6 @@
                 transform: translateX(0);
                 opacity: 1;
             }
-        }
-        /* FIXED: Hide done checking button when status is checked */
-        .feedback-actions .btn-success.hidden {
-            display: none;
         }
         /* Responsive */
         @media (max-width: 1200px) {
@@ -936,7 +943,7 @@
                     </div>
                 </div>
 
-                <!-- Code Area - FIXED: Line numbers scroll with code -->
+                <!-- IMPROVED CODE VIEWER AREA -->
                 <div class="code-area">
                     <div class="code-toolbar">
                         <div class="current-file">
@@ -945,15 +952,20 @@
                             <span class="language-badge" id="languageBadge">-</span>
                         </div>
                     </div>
-                    <div class="code-viewer" id="codeViewer">
+                    
+                    <!-- High-performance code viewer container -->
+                    <div class="code-viewer-container">
                         <div class="loading-overlay hidden" id="codeLoading">
                             <div class="spinner"></div>
                             <div class="loading-text">Loading file...</div>
                         </div>
-                        <!-- FIXED: Wrapper for synchronized scrolling -->
-                        <div class="code-scroll-wrapper" id="codeScrollWrapper">
-                            <div class="line-numbers" id="lineNumbers"></div>
-                            <div class="code-content" id="codeContent"></div>
+                        
+                        <!-- Scrollable container with synchronized line numbers -->
+                        <div class="code-scroll-container" id="codeScrollContainer">
+                            <!-- Line numbers column -->
+                            <div class="line-numbers-column" id="lineNumbersColumn"></div>
+                            <!-- Code content column -->
+                            <div class="code-content-column" id="codeContentColumn"></div>
                         </div>
                     </div>
 
@@ -963,7 +975,6 @@
                         <textarea class="feedback-textarea" id="feedbackText" placeholder="Enter your feedback about this code..."></textarea>
                         <div class="feedback-actions">
                             <button class="btn btn-secondary" onclick="window.previousFile()"><i class="fas fa-chevron-left"></i> Previous</button>
-                            <!-- FIXED: Done Checking button with conditional visibility -->
                             <button class="btn btn-success" id="doneCheckingBtn" onclick="window.saveFeedbackAndDone()"><i class="fas fa-check"></i> Done Checking</button>
                             <button class="btn btn-secondary" onclick="window.nextFile()">Next <i class="fas fa-chevron-right"></i></button>
                         </div>
@@ -1007,12 +1018,10 @@
             // Load assignments on page load
             window.addEventListener("load", loadAssignments);
 
-            // FIXED: Function to update Done Checking button visibility
             function updateDoneCheckingButton() {
                 const doneBtn = document.getElementById("doneCheckingBtn");
                 if (!doneBtn) return;
                 
-                // Check if current assignment status is checked
                 if (currentAssignment) {
                     const statusEl = document.getElementById(`status-${currentAssignment}`);
                     if (statusEl && statusEl.classList.contains("checked")) {
@@ -1030,7 +1039,6 @@
                     if (result.success && result.data.success) {
                         renderAssignments(result.data.assignments);
 
-                        // For each assignment that's already checked, load its feedback
                         const checkedAssignments = result.data.assignments.filter(
                             (a) => a.status === "reviewed" || a.status === "completed"
                         );
@@ -1039,16 +1047,12 @@
                                 const analysisResult = await safeFetchJson(`${API_BASE_URL}/api/analysis/${assignment.submission_id}`);
                                 if (analysisResult.success) {
                                     const files = analysisResult.data.files || [];
-                                    let totalErrors = 0;
-                                    let totalWarnings = 0;
-                                    let fileNames = [];
+                                    let totalErrors = 0, totalWarnings = 0, fileNames = [];
 
                                     files.forEach((file) => {
                                         totalErrors += file.errors?.length || 0;
                                         totalWarnings += file.warnings?.length || 0;
-                                        if (file.file_name) {
-                                            fileNames.push(file.file_name);
-                                        }
+                                        if (file.file_name) fileNames.push(file.file_name);
                                     });
 
                                     const feedback = analysisResult.data.review?.feedback || "";
@@ -1194,9 +1198,7 @@
                 currentAssignment = assignmentId;
                 document.getElementById("syntaxModal").classList.add("active");
                 
-                // FIXED: Update button visibility based on status
                 updateDoneCheckingButton();
-                
                 showLoading("Initializing analysis...");
 
                 try {
@@ -1370,6 +1372,7 @@
                 }
             }
 
+            // IMPROVED: Load file with optimized code viewer
             async function loadFileWithResults(index, submissionId) {
                 if (index < 0 || index >= fileList.length) return;
                 currentFileIndex = index;
@@ -1377,6 +1380,7 @@
 
                 try {
                     document.getElementById("codeLoading").classList.remove("hidden");
+                    
                     const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
                     if (result.success && result.data.files) {
                         const fileResult = result.data.files.find(f => f.file_path === file.file_path);
@@ -1385,23 +1389,86 @@
                             currentWarnings = fileResult.warnings || [];
                             fileAnalysisStatus = { [file.file_path]: { errors: currentErrors.length, warnings: currentWarnings.length } };
                             updateErrorPanel();
+                            
+                            // Display code with optimized viewer
                             if (fileResult.content) {
-                                displayCode(fileResult.content, fileResult.language || "c");
+                                displayCodeOptimized(fileResult.content, fileResult.language || "c");
                             } else {
-                                displayCode(`// No content available for ${file.file_name}\n// The file might be binary or empty.`, file.language || "c");
+                                displayCodeOptimized(`// No content available for ${file.file_name}\n// The file might be binary or empty.`, file.language || "c");
                             }
                         }
                     }
+                    
                     document.getElementById("currentFileName").textContent = file.file_name || "Unknown";
                     document.getElementById("languageBadge").textContent = file.language || "c";
                     document.getElementById("codeLoading").classList.add("hidden");
                     
                     const analysisLoading = document.getElementById("analysisLoading");
                     if (analysisLoading) analysisLoading.remove();
+                    
+                    renderFileList();
                 } catch (error) {
                     console.error("Error loading file:", error);
                     document.getElementById("codeLoading").classList.add("hidden");
-                    displayCode(`// Error loading file: ${error.message}`, "c");
+                    displayCodeOptimized(`// Error loading file: ${error.message}`, "c");
+                }
+            }
+
+            // IMPROVED: Optimized code display with virtual scrolling capability
+            function displayCodeOptimized(code, language) {
+                const lines = code.split('\n');
+                const lineNumbersColumn = document.getElementById('lineNumbersColumn');
+                const codeContentColumn = document.getElementById('codeContentColumn');
+                const scrollContainer = document.getElementById('codeScrollContainer');
+                
+                // Clear previous content
+                lineNumbersColumn.innerHTML = '';
+                codeContentColumn.innerHTML = '';
+                
+                // Use DocumentFragment for better performance
+                const lineNumbersFragment = document.createDocumentFragment();
+                const codeContentFragment = document.createDocumentFragment();
+                
+                // Calculate line count for performance monitoring
+                const lineCount = lines.length;
+                console.log(`Displaying ${lineCount} lines of code`);
+                
+                // For very large files, we could implement virtualization
+                // But for now, we'll render all lines with optimized DOM
+                const startTime = performance.now();
+                
+                for (let i = 0; i < lineCount; i++) {
+                    const lineNumber = document.createElement('div');
+                    lineNumber.textContent = i + 1;
+                    lineNumbersFragment.appendChild(lineNumber);
+                    
+                    const lineContent = document.createElement('div');
+                    lineContent.className = 'code-line';
+                    
+                    // Check for errors/warnings on this line
+                    const hasError = currentErrors.some(e => e.line === i + 1);
+                    const hasWarning = currentWarnings.some(w => w.line === i + 1);
+                    
+                    if (hasError) {
+                        lineContent.classList.add('error-line');
+                    } else if (hasWarning) {
+                        lineContent.classList.add('warning-line');
+                    }
+                    
+                    lineContent.textContent = lines[i] || ' ';
+                    codeContentFragment.appendChild(lineContent);
+                }
+                
+                lineNumbersColumn.appendChild(lineNumbersFragment);
+                codeContentColumn.appendChild(codeContentFragment);
+                
+                const endTime = performance.now();
+                console.log(`Code rendering took ${endTime - startTime}ms`);
+                
+                // Reset scroll position
+                if (scrollContainer) {
+                    scrollContainer.scrollTop = 0;
+                    scrollContainer.scrollLeft = 0;
                 }
             }
 
@@ -1415,8 +1482,7 @@
                 fileListEl.innerHTML = filteredFiles.map((file, index) => {
                     const originalIndex = fileList.findIndex(f => f.file_path === file.file_path);
                     const status = fileAnalysisStatus[file.file_path];
-                    let statusClass = "";
-                    let statusIcon = "";
+                    let statusClass = "", statusIcon = "";
                     if (status) {
                         if (status.errors > 0) {
                             statusClass = "has-errors";
@@ -1434,62 +1500,39 @@
                 }).join("");
             }
 
+            // Load file with optimized viewer
             function loadFile(index) {
                 if (index < 0 || index >= fileList.length) return;
                 currentFileIndex = index;
                 const file = fileList[index];
+                
                 document.querySelectorAll(".file-item").forEach((el, i) => {
                     const filePath = fileList[i]?.file_path;
                     el.classList.toggle("active", filePath === file.file_path);
                 });
+                
                 document.getElementById("currentFileName").textContent = file.file_name || file.name || "Unknown";
                 document.getElementById("languageBadge").textContent = file.language || "c";
                 document.getElementById("codeLoading").classList.remove("hidden");
+                
+                // Use setTimeout to allow UI to update
                 setTimeout(() => {
                     if (file.content) {
                         currentErrors = file.errors || [];
                         currentWarnings = file.warnings || [];
                         fileAnalysisStatus = { [file.file_path]: { errors: currentErrors.length, warnings: currentWarnings.length } };
                         updateErrorPanel();
-                        displayCode(file.content, file.language || "c");
+                        displayCodeOptimized(file.content, file.language || "c");
                     } else {
-                        displayCode(`// No content available for ${file.file_name}`, file.language || "c");
+                        displayCodeOptimized(`// No content available for ${file.file_name}`, file.language || "c");
                     }
                     document.getElementById("codeLoading").classList.add("hidden");
+                    
                     const analysisLoading = document.getElementById("analysisLoading");
                     if (analysisLoading) analysisLoading.remove();
-                }, 500);
-            }
-
-            function displayCode(code, language) {
-                const lines = code.split("\n");
-                const lineNumbersEl = document.getElementById("lineNumbers");
-                const codeContentEl = document.getElementById("codeContent");
-                const scrollWrapper = document.getElementById("codeScrollWrapper");
-
-                let lineNumbersHtml = "";
-                let codeHtml = "";
-
-                lines.forEach((line, i) => {
-                    lineNumbersHtml += `<div>${i + 1}</div>`;
-                    const hasError = currentErrors.some((e) => e.line === i + 1);
-                    const hasWarning = currentWarnings.some((w) => w.line === i + 1);
-                    let lineClass = "code-line";
-                    if (hasError) lineClass += " error-line";
-                    else if (hasWarning) lineClass += " warning-line";
-                    codeHtml += `<div class="${lineClass}">${escapeHtml(line)}</div>`;
-                });
-
-                lineNumbersEl.innerHTML = lineNumbersHtml;
-                codeContentEl.innerHTML = codeHtml;
-
-                // FIXED: Ensure scroll wrapper scrolls both elements together
-                if (scrollWrapper) {
-                    scrollWrapper.onscroll = function() {
-                        lineNumbersEl.style.transform = `translateY(-${this.scrollTop}px)`;
-                        codeContentEl.style.transform = `translateY(-${this.scrollTop}px)`;
-                    };
-                }
+                    
+                    renderFileList();
+                }, 100);
             }
 
             function escapeHtml(text) {
