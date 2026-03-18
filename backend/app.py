@@ -130,12 +130,18 @@ def get_student_assignments(student_id):
                 "language": assignment["language"],
                 "repo_url": assignment["repo_url"],
                 "branch": assignment.get("branch", "main"),
-                "status": "pending"
+                "status": "pending",
+                "grade": None
             }
             
             if submission:
                 assignment_data["status"] = submission.get("status", "pending")
                 assignment_data["submission_id"] = str(submission["_id"])
+                
+                # Get review to check for grade
+                review = reviews_collection.find_one({"submission_id": submission["_id"]})
+                if review:
+                    assignment_data["grade"] = review.get("grade")
                 
                 # Get analysis results
                 analysis_results = list(analysis_results_collection.find({
@@ -234,6 +240,62 @@ def submit_repository():
         print(f"❌ Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/save-grade', methods=['POST'])
+def save_grade():
+    """Save grade for a submission"""
+    try:
+        data = request.json
+        submission_id = data.get('submission_id')
+        grade = data.get('grade')
+        
+        if not submission_id:
+            return jsonify({'success': False, 'error': 'Submission ID required'}), 400
+        
+        if grade is None or not isinstance(grade, (int, float)) or grade < 0 or grade > 100:
+            return jsonify({'success': False, 'error': 'Grade must be a number between 0 and 100'}), 400
+        
+        # Check if submission exists
+        submission = submissions_collection.find_one({'_id': submission_id})
+        if not submission:
+            return jsonify({'success': False, 'error': 'Submission not found'}), 404
+        
+        # Find or create review
+        review = reviews_collection.find_one({'submission_id': submission_id})
+        
+        if review:
+            # Update existing review
+            reviews_collection.update_one(
+                {'submission_id': submission_id},
+                {'$set': {
+                    'grade': grade,
+                    'updated_at': datetime.utcnow()
+                }}
+            )
+            print(f"✅ Updated grade for submission {submission_id}: {grade}")
+        else:
+            # Create new review
+            review_id = str(uuid.uuid4())
+            review = {
+                '_id': review_id,
+                'submission_id': submission_id,
+                'grade': grade,
+                'feedback': '',
+                'status': 'pending',
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }
+            reviews_collection.insert_one(review)
+            print(f"✅ Created new review with grade for submission {submission_id}: {grade}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Grade {grade} saved successfully'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error saving grade: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/analysis/<submission_id>', methods=['GET'])
 def get_analysis(submission_id):
     """Get analysis results for a submission"""
@@ -314,23 +376,41 @@ def save_feedback():
         if not submission_id:
             return jsonify({'success': False, 'error': 'Submission ID required'}), 400
         
-        # Create or update review
-        review_id = str(uuid.uuid4())
-        review = {
-            '_id': review_id,
-            'submission_id': submission_id,
-            'reviewer_id': reviewer_id,
-            'status': 'completed',
-            'feedback': feedback,
-            'created_at': datetime.utcnow(),
-            'completed_at': datetime.utcnow()
-        }
+        # Check if submission exists
+        submission = submissions_collection.find_one({'_id': submission_id})
+        if not submission:
+            return jsonify({'success': False, 'error': 'Submission not found'}), 404
         
-        reviews_collection.update_one(
-            {'submission_id': submission_id},
-            {'$set': review},
-            upsert=True
-        )
+        # Check if review already exists
+        existing_review = reviews_collection.find_one({'submission_id': submission_id})
+        
+        if existing_review:
+            # Update existing review
+            reviews_collection.update_one(
+                {'submission_id': submission_id},
+                {'$set': {
+                    'feedback': feedback,
+                    'reviewer_id': reviewer_id,
+                    'status': 'completed',
+                    'completed_at': datetime.utcnow()
+                }}
+            )
+            review_id = existing_review['_id']
+            print(f"✅ Updated feedback for submission {submission_id}")
+        else:
+            # Create new review
+            review_id = str(uuid.uuid4())
+            review = {
+                '_id': review_id,
+                'submission_id': submission_id,
+                'reviewer_id': reviewer_id,
+                'feedback': feedback,
+                'status': 'completed',
+                'created_at': datetime.utcnow(),
+                'completed_at': datetime.utcnow()
+            }
+            reviews_collection.insert_one(review)
+            print(f"✅ Created new review for submission {submission_id}")
         
         # Update submission status
         submissions_collection.update_one(
@@ -338,11 +418,10 @@ def save_feedback():
             {'$set': {'status': 'reviewed'}}
         )
         
-        print(f"✅ Feedback saved for submission {submission_id}")
-        
         return jsonify({
             'success': True,
-            'message': 'Feedback saved successfully'
+            'message': 'Feedback saved successfully',
+            'review_id': str(review_id)
         })
         
     except Exception as e:
@@ -587,10 +666,6 @@ def analyze_repository_background(submission_id, repo_url, branch):
                     
                 print(f"{status_icon} Processed: {rel_path} - Lang: {language}, Size: {file_size} bytes")
                 
-                # Print errors for debugging
-                for err in errors[:3]:  # Show first 3 errors max
-                    print(f"   📍 Error at line {err['line']}: {err['message'][:50]}...")
-                
             except Exception as e:
                 print(f"❌ Error processing {rel_path}: {e}")
                 # Still store the file with error message
@@ -681,7 +756,8 @@ def home():
             '/api/submit-repo',
             '/api/analysis/<submission_id>',
             '/api/files/<submission_id>',
-            '/api/save-feedback'
+            '/api/save-feedback',
+            '/api/save-grade'
         ]
     })
 

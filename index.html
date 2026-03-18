@@ -1,1122 +1,1485 @@
 <!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CodeTracker — Syntax Analyzer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      /* [All the CSS remains the same as before] */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --bg-dark: #0d1117;
+        --bg-card: #161b22;
+        --bg-input: #0d1117;
+        --border: #30363d;
+        --text-primary: #c9d1d9;
+        --text-secondary: #8b949e;
+        --accent-blue: #58a6ff;
+        --accent-green: #3fb950;
+        --accent-red: #f85149;
+        --accent-yellow: #d29922;
+        --accent-purple: #bc8cff;
+
+        /* Code viewer specific variables */
+        --line-height: 1.6;
+        --font-size: 14px;
+        --line-number-width: 60px;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        min-height: 100vh;
+      }
+      /* Header */
+      .site-header {
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border);
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .brand-logo {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-purple)
+        );
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+      }
+      .brand-text h1 {
+        font-size: 1.5rem;
+        color: var(--text-primary);
+      }
+      .brand-text .subtitle {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .user-info {
+        text-align: right;
+      }
+      .user-name {
+        font-weight: 600;
+      }
+      .user-role {
+        font-size: 0.8rem;
+        color: var(--accent-blue);
+      }
+      .user-avatar {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-purple)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
+      /* Main Content */
+      .main-content {
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      /* Student Profile */
+      .student-profile {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+      .profile-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .avatar-large {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-blue),
+          var(--accent-purple)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+      .person h2 {
+        margin-bottom: 5px;
+      }
+      .person .email {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      .badges {
+        display: flex;
+        gap: 10px;
+      }
+      .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .badge.green {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .badge.blue {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .profile-stats {
+        display: flex;
+        gap: 20px;
+      }
+      .stat-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        min-width: 140px;
+      }
+      .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+      .stat-icon.pending {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .stat-icon.completed {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .stat-icon.grade {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .stat-title {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      /* Assignments Section */
+      .assignments-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+      }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+      .section-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.5rem;
+      }
+      .assignments-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .assignment-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        transition: all 0.3s;
+      }
+      .assignment-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      }
+      .assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      .assignment-header h3 {
+        font-size: 1.3rem;
+        color: var(--accent-blue);
+      }
+      .status-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status-badge.pending {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .status-badge.checked {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .assignment-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+        background: var(--bg-card);
+        padding: 15px;
+        border-radius: 8px;
+      }
+      .detail-item {
+        font-size: 0.95rem;
+      }
+      .detail-item strong {
+        color: var(--text-secondary);
+        display: block;
+        margin-bottom: 3px;
+        font-size: 0.85rem;
+      }
+      .grade-display {
+        display: inline-block;
+        padding: 4px 12px;
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      .repo-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .repo-link:hover {
+        text-decoration: underline;
+      }
+      .assignment-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: var(--accent-blue);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #4090e0;
+        transform: translateY(-2px);
+      }
+      .btn-secondary {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: var(--border);
+      }
+      .btn-success {
+        background: var(--accent-green);
+        color: white;
+      }
+      .btn-success:hover {
+        background: #36a346;
+        transform: translateY(-2px);
+      }
+      .btn-success.hidden {
+        display: none;
+      }
+      /* Assignment Feedback Display */
+      .assignment-feedback {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+      }
+      .feedback-summary {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+      .feedback-stat {
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedback-stat.errors {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--accent-red);
+      }
+      .feedback-stat.warnings {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .feedback-stat.status {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--accent-green);
+      }
+      .feedback-stat.grade {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .feedback-text {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+      }
+      .feedback-text h4 {
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedback-text p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+      /* Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 1000;
+        overflow: auto;
+      }
+      .modal-overlay.active {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 20px;
+      }
+      .syntax-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 1400px;
+        height: 95vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+      }
+      .modal-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.3rem;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.8rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: var(--text-primary);
+      }
+      .modal-body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+      /* File Sidebar */
+      .file-sidebar {
+        width: 280px;
+        background: var(--bg-input);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+      .file-sidebar-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+      .file-sidebar-header h4 {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .file-search {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+      }
+      .file-search:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+      }
+      .file-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .file-item {
+        padding: 10px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+        transition: background 0.2s;
+      }
+      .file-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .file-item.active {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+      }
+      .file-item.has-errors {
+        border-left: 3px solid var(--accent-red);
+      }
+      .file-item.has-warnings {
+        border-left: 3px solid var(--accent-yellow);
+      }
+      .file-item.checked {
+        border-left: 3px solid var(--accent-green);
+      }
+      .file-icon {
+        font-size: 1rem;
+        width: 20px;
+        text-align: center;
+      }
+      .file-name {
+        flex: 1;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-status-icon {
+        font-size: 0.8rem;
+      }
+      /* ========== IMPROVED CODE VIEWER ========== */
+      .code-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #1e1e1e;
+      }
+      .code-toolbar {
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .current-file {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.95rem;
+      }
+      .language-badge {
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        background: rgba(188, 140, 255, 0.15);
+        color: var(--accent-purple);
+      }
+      /* High-performance code viewer container */
+      .code-viewer-container {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+        background: #1e1e1e;
+        height: 100%;
+      }
+      /* Virtual scroll container for better performance */
+      .code-scroll-container {
+        flex: 1;
+        display: flex;
+        overflow: auto;
+        position: relative;
+        height: 100%;
+        scroll-behavior: smooth;
+        will-change: transform;
+      }
+      /* Line numbers column - fixed width, scrolls with content */
+      .line-numbers-column {
+        flex-shrink: 0;
+        width: var(--line-number-width);
+        background: #1e1e1e;
+        color: #6e7681;
+        text-align: right;
+        font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+        font-size: var(--font-size);
+        line-height: var(--line-height);
+        padding: 15px 8px 15px 0;
+        border-right: 1px solid #2d2d2d;
+        user-select: none;
+        pointer-events: none;
+        white-space: pre;
+        overflow: visible;
+      }
+      /* Code content column - scrolls with line numbers */
+      .code-content-column {
+        flex: 1;
+        font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+        font-size: var(--font-size);
+        line-height: var(--line-height);
+        color: #d4d4d4;
+        padding: 15px 0 15px 15px;
+        white-space: pre;
+        overflow: visible;
+      }
+      /* Individual line styling */
+      .code-line {
+        display: block;
+        height: calc(var(--font-size) * var(--line-height));
+        white-space: pre;
+      }
+      .code-line.error-line {
+        background: rgba(248, 81, 73, 0.2);
+        border-left: 3px solid var(--accent-red);
+        padding-left: 12px;
+        margin-left: -15px;
+      }
+      .code-line.warning-line {
+        background: rgba(210, 153, 34, 0.2);
+        border-left: 3px solid var(--accent-yellow);
+        padding-left: 12px;
+        margin-left: -15px;
+      }
+      /* Loading overlay */
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(13, 17, 23, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .loading-overlay.hidden {
+        display: none;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent-blue);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        :root {
-            --bg-dark: #0d1117;
-            --bg-card: #161b22;
-            --bg-input: #0d1117;
-            --border: #30363d;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --accent-blue: #58a6ff;
-            --accent-green: #3fb950;
-            --accent-red: #f85149;
-            --accent-yellow: #d29922;
-            --accent-purple: #bc8cff;
-            
-            /* Code viewer specific variables */
-            --line-height: 1.6;
-            --font-size: 14px;
-            --line-number-width: 60px;
+      }
+      .loading-text {
+        margin-top: 15px;
+        color: var(--text-secondary);
+        font-size: 1rem;
+      }
+      /* Error Panel */
+      .error-panel {
+        width: 350px;
+        background: var(--bg-input);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+      .error-panel-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .error-panel-header h4 {
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .error-summary {
+        display: flex;
+        gap: 10px;
+      }
+      .error-count,
+      .warning-count {
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+      }
+      .error-count {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--accent-red);
+      }
+      .warning-count {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--accent-yellow);
+      }
+      .error-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .error-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent-red);
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+      .error-item.warning {
+        border-left-color: var(--accent-yellow);
+      }
+      .error-line-num {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+      }
+      .error-message {
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+      .no-errors {
+        text-align: center;
+        padding: 30px;
+        color: var(--accent-green);
+      }
+      .no-errors i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+      }
+      /* IMPROVED: Feedback and Grade Section */
+      .feedback-section {
+        border-top: 1px solid var(--border);
+        padding: 15px 20px;
+        background: var(--bg-input);
+      }
+      .feedback-section h4 {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+      }
+      .feedback-textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        resize: vertical;
+        margin-bottom: 10px;
+      }
+      .feedback-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+      }
+      .feedback-textarea:disabled {
+        opacity: 0.8;
+        cursor: not-allowed;
+        background: var(--bg-input);
+      }
+      .feedback-display {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+      .feedback-display p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        margin-top: 8px;
+      }
+      .grade-display-large {
+        display: inline-block;
+        padding: 8px 20px;
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-right: 15px;
+      }
+      .grade-section {
+        margin-top: 15px;
+        padding: 15px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .grade-section h4 {
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .grade-input-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+      .grade-input {
+        width: 100px;
+        padding: 10px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        font-weight: 600;
+        text-align: center;
+      }
+      .grade-input:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+      }
+      .grade-input:disabled {
+        opacity: 0.8;
+        cursor: not-allowed;
+        background: var(--bg-input);
+      }
+      .grade-range {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+      .grade-error {
+        color: var(--accent-red);
+        font-size: 0.85rem;
+        margin-top: 5px;
+      }
+      .review-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent-blue);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-left: 10px;
+      }
+      .feedback-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      /* Analysis Progress */
+      .analysis-progress {
+        position: absolute;
+        top: 60px;
+        left: 20px;
+        right: 20px;
+        margin: 10px 0;
+        padding: 15px;
+        background: var(--bg-card);
+        border-radius: 8px;
+        z-index: 10;
+        border: 1px solid var(--border);
+      }
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
+      .progress-bar-container {
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent-blue);
+        transition: width 0.3s ease;
+      }
+      /* Toasts */
+      .success-toast,
+      .error-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+      }
+      .success-toast {
+        background: var(--accent-green);
+      }
+      .error-toast {
+        background: var(--accent-red);
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
+        to {
+          transform: translateX(0);
+          opacity: 1;
         }
-        /* Header */
-        .site-header {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+      }
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .modal-body {
+          flex-direction: column;
         }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .file-sidebar {
+          width: 100%;
+          max-height: 200px;
         }
-        .brand-logo {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
+        .error-panel {
+          width: 100%;
+          max-height: 250px;
         }
-        .brand-text h1 {
-            font-size: 1.5rem;
-            color: var(--text-primary);
-        }
-        .brand-text .subtitle {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .user-info {
-            text-align: right;
-        }
-        .user-name {
-            font-weight: 600;
-        }
-        .user-role {
-            font-size: 0.8rem;
-            color: var(--accent-blue);
-        }
-        .user-avatar {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-        /* Main Content */
-        .main-content {
-            padding: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        /* Student Profile */
+      }
+      @media (max-width: 768px) {
         .student-profile {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+          flex-direction: column;
+          gap: 20px;
+          text-align: center;
         }
         .profile-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .avatar-large {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-        }
-        .person h2 {
-            margin-bottom: 5px;
-        }
-        .person .email {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-        }
-        .badges {
-            display: flex;
-            gap: 10px;
-        }
-        .badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .badge.green {
-            background: rgba(63, 185, 80, 0.15);
-            color: var(--accent-green);
-        }
-        .badge.blue {
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-blue);
+          flex-direction: column;
         }
         .profile-stats {
-            display: flex;
-            gap: 20px;
-        }
-        .stat-card {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            min-width: 140px;
-        }
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-        .stat-icon.pending {
-            background: rgba(210, 153, 34, 0.15);
-            color: var(--accent-yellow);
-        }
-        .stat-icon.completed {
-            background: rgba(63, 185, 80, 0.15);
-            color: var(--accent-green);
-        }
-        .stat-title {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        /* Assignments Section */
-        .assignments-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-        }
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-        .section-header h2 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-        }
-        .assignments-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .assignment-card {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            transition: all 0.3s;
-        }
-        .assignment-card:hover {
-            border-color: var(--accent-blue);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-        }
-        .assignment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .assignment-header h3 {
-            font-size: 1.3rem;
-            color: var(--accent-blue);
-        }
-        .status-badge {
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .status-badge.pending {
-            background: rgba(210, 153, 34, 0.15);
-            color: var(--accent-yellow);
-        }
-        .status-badge.checked {
-            background: rgba(63, 185, 80, 0.15);
-            color: var(--accent-green);
-        }
-        .assignment-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .detail-item {
-            font-size: 0.95rem;
-        }
-        .detail-item strong {
-            color: var(--text-secondary);
-            display: block;
-            margin-bottom: 3px;
-            font-size: 0.85rem;
-        }
-        .repo-link {
-            color: var(--accent-blue);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .repo-link:hover {
-            text-decoration: underline;
+          flex-wrap: wrap;
+          justify-content: center;
         }
         .assignment-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+          flex-direction: column;
         }
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+          width: 100%;
+          justify-content: center;
         }
-        .btn-primary {
-            background: var(--accent-blue);
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #4090e0;
-            transform: translateY(-2px);
-        }
-        .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-        .btn-secondary:hover {
-            background: var(--border);
-        }
-        .btn-success {
-            background: var(--accent-green);
-            color: white;
-        }
-        .btn-success:hover {
-            background: #36a346;
-            transform: translateY(-2px);
-        }
-        .btn-success.hidden {
-            display: none;
-        }
-        /* Assignment Feedback Display */
-        .assignment-feedback {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-        .feedback-summary {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        .feedback-stat {
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .feedback-stat.errors {
-            background: rgba(248, 81, 73, 0.15);
-            color: var(--accent-red);
-        }
-        .feedback-stat.warnings {
-            background: rgba(210, 153, 34, 0.15);
-            color: var(--accent-yellow);
-        }
-        .feedback-stat.status {
-            background: rgba(63, 185, 80, 0.15);
-            color: var(--accent-green);
-        }
-        .feedback-text {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-        .feedback-text h4 {
-            color: var(--accent-blue);
-            margin-bottom: 10px;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .feedback-text p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            overflow: auto;
-        }
-        .modal-overlay.active {
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding: 20px;
-        }
-        .syntax-modal {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 1400px;
-            height: 95vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .modal-header {
-            background: var(--bg-input);
-            border-bottom: 1px solid var(--border);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-        }
-        .modal-header h2 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.3rem;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.8rem;
-            cursor: pointer;
-            padding: 5px 10px;
-            line-height: 1;
-        }
-        .modal-close:hover {
-            color: var(--text-primary);
-        }
-        .modal-body {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
-        /* File Sidebar */
-        .file-sidebar {
-            width: 280px;
-            background: var(--bg-input);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-        }
-        .file-sidebar-header {
-            padding: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-        .file-sidebar-header h4 {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .file-search {
-            width: 100%;
-            padding: 8px 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 0.85rem;
-        }
-        .file-search:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
-        .file-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        .file-item {
-            padding: 10px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 5px;
-            transition: background 0.2s;
-        }
-        .file-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .file-item.active {
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-blue);
-        }
-        .file-item.has-errors {
-            border-left: 3px solid var(--accent-red);
-        }
-        .file-item.has-warnings {
-            border-left: 3px solid var(--accent-yellow);
-        }
-        .file-item.checked {
-            border-left: 3px solid var(--accent-green);
-        }
-        .file-icon {
-            font-size: 1rem;
-            width: 20px;
-            text-align: center;
-        }
-        .file-name {
-            flex: 1;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .file-status-icon {
-            font-size: 0.8rem;
-        }
-        /* ========== IMPROVED CODE VIEWER ========== */
-        .code-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: #1e1e1e;
-        }
-        .code-toolbar {
-            background: var(--bg-input);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .current-file {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.95rem;
-        }
-        .language-badge {
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            background: rgba(188, 140, 255, 0.15);
-            color: var(--accent-purple);
-        }
-        /* High-performance code viewer container */
-        .code-viewer-container {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-            position: relative;
-            background: #1e1e1e;
-            height: 100%;
-        }
-        /* Virtual scroll container for better performance */
-        .code-scroll-container {
-            flex: 1;
-            display: flex;
-            overflow: auto;
-            position: relative;
-            height: 100%;
-            scroll-behavior: smooth;
-            will-change: transform;
-        }
-        /* Line numbers column - fixed width, scrolls with content */
-        .line-numbers-column {
-            flex-shrink: 0;
-            width: var(--line-number-width);
-            background: #1e1e1e;
-            color: #6e7681;
-            text-align: right;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            padding: 15px 8px 15px 0;
-            border-right: 1px solid #2d2d2d;
-            user-select: none;
-            pointer-events: none;
-            white-space: pre;
-            overflow: visible;
-        }
-        /* Code content column - scrolls with line numbers */
-        .code-content-column {
-            flex: 1;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            color: #d4d4d4;
-            padding: 15px 0 15px 15px;
-            white-space: pre;
-            overflow: visible;
-        }
-        /* Individual line styling */
-        .code-line {
-            display: block;
-            height: calc(var(--font-size) * var(--line-height));
-            white-space: pre;
-        }
-        .code-line.error-line {
-            background: rgba(248, 81, 73, 0.2);
-            border-left: 3px solid var(--accent-red);
-            padding-left: 12px;
-            margin-left: -15px;
-        }
-        .code-line.warning-line {
-            background: rgba(210, 153, 34, 0.2);
-            border-left: 3px solid var(--accent-yellow);
-            padding-left: 12px;
-            margin-left: -15px;
-        }
-        /* Loading overlay */
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(13, 17, 23, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        .loading-overlay.hidden {
-            display: none;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border);
-            border-top-color: var(--accent-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loading-text {
-            margin-top: 15px;
-            color: var(--text-secondary);
-            font-size: 1rem;
-        }
-        /* Error Panel */
-        .error-panel {
-            width: 350px;
-            background: var(--bg-input);
-            border-left: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-        }
-        .error-panel-header {
-            padding: 15px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .error-panel-header h4 {
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .error-summary {
-            display: flex;
-            gap: 10px;
-        }
-        .error-count,
-        .warning-count {
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-        .error-count {
-            background: rgba(248, 81, 73, 0.15);
-            color: var(--accent-red);
-        }
-        .warning-count {
-            background: rgba(210, 153, 34, 0.15);
-            color: var(--accent-yellow);
-        }
-        .error-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        .error-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--accent-red);
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 10px;
-        }
-        .error-item.warning {
-            border-left-color: var(--accent-yellow);
-        }
-        .error-line-num {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-        }
-        .error-message {
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-        .no-errors {
-            text-align: center;
-            padding: 30px;
-            color: var(--accent-green);
-        }
-        .no-errors i {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        /* Feedback Section */
-        .feedback-section {
-            border-top: 1px solid var(--border);
-            padding: 15px 20px;
-            background: var(--bg-input);
-        }
-        .feedback-section h4 {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-        }
-        .feedback-textarea {
-            width: 100%;
-            min-height: 80px;
-            padding: 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            resize: vertical;
-            margin-bottom: 10px;
-        }
-        .feedback-textarea:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
-        .feedback-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        /* Analysis Progress */
-        .analysis-progress {
-            position: absolute;
-            top: 60px;
-            left: 20px;
-            right: 20px;
-            margin: 10px 0;
-            padding: 15px;
-            background: var(--bg-card);
-            border-radius: 8px;
-            z-index: 10;
-            border: 1px solid var(--border);
-        }
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-        .progress-bar-container {
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .progress-bar-fill {
-            height: 100%;
-            background: var(--accent-blue);
-            transition: width 0.3s ease;
-        }
-        /* Toasts */
-        .success-toast,
-        .error-toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 2000;
-            animation: slideIn 0.3s ease;
-        }
-        .success-toast {
-            background: var(--accent-green);
-        }
-        .error-toast {
-            background: var(--accent-red);
-        }
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .modal-body {
-                flex-direction: column;
-            }
-            .file-sidebar {
-                width: 100%;
-                max-height: 200px;
-            }
-            .error-panel {
-                width: 100%;
-                max-height: 250px;
-            }
-        }
-        @media (max-width: 768px) {
-            .student-profile {
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-            }
-            .profile-left {
-                flex-direction: column;
-            }
-            .profile-stats {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .assignment-actions {
-                flex-direction: column;
-            }
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Header -->
     <header class="site-header">
-        <div class="header-left">
-            <div class="brand-logo"><i class="fas fa-code"></i></div>
-            <div class="brand-text">
-                <h1>CodeTracker</h1>
-                <div class="subtitle">GitHub Project Syntax Analyzer</div>
-            </div>
+      <div class="header-left">
+        <div class="brand-logo"><i class="fas fa-code"></i></div>
+        <div class="brand-text">
+          <h1>CodeTracker</h1>
+          <div class="subtitle">GitHub Project Syntax Analyzer</div>
         </div>
-        <div class="header-right">
-            <div class="user-info">
-                <div class="user-name">Israel Cabasug</div>
-                <div class="user-role">Instructor</div>
-            </div>
-            <div class="user-avatar">IC</div>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <div class="user-name">Israel Cabasug</div>
+          <div class="user-role">Instructor</div>
         </div>
+        <div class="user-avatar">IC</div>
+      </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Student Profile -->
-        <div class="student-profile">
-            <div class="profile-left">
-                <div class="avatar-large" id="studentAvatar">DF</div>
-                <div class="person">
-                    <h2 id="studentName">Dexter Facelo</h2>
-                    <div class="email" id="studentEmail">dexter.facelo@student.edu</div>
-                    <div class="badges">
-                        <span class="badge green"><i class="fas fa-code-branch"></i> <span id="studentCourse">CS Student</span></span>
-                        <span class="badge blue"><i class="fas fa-star"></i> <span id="studentYear">Year 3</span></span>
-                    </div>
-                </div>
+      <!-- Student Profile with Average Grade -->
+      <div class="student-profile">
+        <div class="profile-left">
+          <div class="avatar-large" id="studentAvatar">DF</div>
+          <div class="person">
+            <h2 id="studentName">Dexter Facelo</h2>
+            <div class="email" id="studentEmail">dexter.facelo@student.edu</div>
+            <div class="badges">
+              <span class="badge green"
+                ><i class="fas fa-code-branch"></i>
+                <span id="studentCourse">CS Student</span></span
+              >
+              <span class="badge blue"
+                ><i class="fas fa-star"></i>
+                <span id="studentYear">Year 3</span></span
+              >
             </div>
-            <div class="profile-stats">
-                <div class="stat-card">
-                    <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
-                    <div>
-                        <div class="stat-title">Pending Review</div>
-                        <div class="stat-value" id="pendingCount">0</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon completed"><i class="fas fa-check-circle"></i></div>
-                    <div>
-                        <div class="stat-title">Completed</div>
-                        <div class="stat-value" id="completedCount">0</div>
-                    </div>
-                </div>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="stat-card">
+            <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
+            <div>
+              <div class="stat-title">Pending Review</div>
+              <div class="stat-value" id="pendingCount">0</div>
             </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon completed">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+              <div class="stat-title">Completed</div>
+              <div class="stat-value" id="completedCount">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon grade"><i class="fas fa-star"></i></div>
+            <div>
+              <div class="stat-title">Average Grade</div>
+              <div class="stat-value" id="averageGrade">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignments Section -->
+      <div class="assignments-section">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-tasks" style="color: var(--accent-blue)"></i>
+            Student Assignments
+          </h2>
+          <span
+            class="status-badge"
+            style="background: rgba(88, 166, 255, 0.15)"
+          >
+            <i class="fab fa-github"></i> GitHub Integration
+          </span>
         </div>
 
-        <!-- Assignments Section -->
-        <div class="assignments-section">
-            <div class="section-header">
-                <h2><i class="fas fa-tasks" style="color: var(--accent-blue)"></i> Student Assignments</h2>
-                <span class="status-badge" style="background: rgba(88, 166, 255, 0.15)">
-                    <i class="fab fa-github"></i> GitHub Integration
-                </span>
-            </div>
-
-            <div class="assignments-container" id="assignmentsContainer">
-                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                    <i class="fas fa-spinner fa-spin fa-3x"></i>
-                    <p style="margin-top: 20px">Loading assignments...</p>
-                </div>
-            </div>
+        <div class="assignments-container" id="assignmentsContainer">
+          <div
+            style="
+              text-align: center;
+              padding: 40px;
+              color: var(--text-secondary);
+            "
+          >
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p style="margin-top: 20px">Loading assignments...</p>
+          </div>
         </div>
+      </div>
     </main>
 
     <!-- Syntax Analyzer Modal -->
     <div class="modal-overlay" id="syntaxModal">
-        <div class="syntax-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-code" style="color: var(--accent-blue)"></i> Syntax Analyzer - <span id="modalAssignmentTitle">Assignment</span></h2>
-                <button class="modal-close" onclick="window.closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- File List Sidebar -->
-                <div class="file-sidebar">
-                    <div class="file-sidebar-header">
-                        <h4><i class="fas fa-folder-open"></i> Repository Files</h4>
-                        <input type="text" class="file-search" placeholder="Search files..." id="fileSearch" />
-                    </div>
-                    <div class="file-list" id="fileList">
-                        <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                            <i class="fas fa-spinner fa-spin"></i> Loading files...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- IMPROVED CODE VIEWER AREA -->
-                <div class="code-area">
-                    <div class="code-toolbar">
-                        <div class="current-file">
-                            <i class="fas fa-file-code"></i>
-                            <span id="currentFileName">Select a file</span>
-                            <span class="language-badge" id="languageBadge">-</span>
-                        </div>
-                    </div>
-                    
-                    <!-- High-performance code viewer container -->
-                    <div class="code-viewer-container">
-                        <div class="loading-overlay hidden" id="codeLoading">
-                            <div class="spinner"></div>
-                            <div class="loading-text">Loading file...</div>
-                        </div>
-                        
-                        <!-- Scrollable container with synchronized line numbers -->
-                        <div class="code-scroll-container" id="codeScrollContainer">
-                            <!-- Line numbers column -->
-                            <div class="line-numbers-column" id="lineNumbersColumn"></div>
-                            <!-- Code content column -->
-                            <div class="code-content-column" id="codeContentColumn"></div>
-                        </div>
-                    </div>
-
-                    <!-- Feedback Section -->
-                    <div class="feedback-section">
-                        <h4><i class="fas fa-comment-dots" style="color: var(--accent-blue)"></i> Professor Feedback</h4>
-                        <textarea class="feedback-textarea" id="feedbackText" placeholder="Enter your feedback about this code..."></textarea>
-                        <div class="feedback-actions">
-                            <button class="btn btn-secondary" onclick="window.previousFile()"><i class="fas fa-chevron-left"></i> Previous</button>
-                            <button class="btn btn-success" id="doneCheckingBtn" onclick="window.saveFeedbackAndDone()"><i class="fas fa-check"></i> Done Checking</button>
-                            <button class="btn btn-secondary" onclick="window.nextFile()">Next <i class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error Panel -->
-                <div class="error-panel">
-                    <div class="error-panel-header">
-                        <h4><i class="fas fa-exclamation-triangle" style="color: var(--accent-yellow)"></i> Issues Found</h4>
-                        <div class="error-summary">
-                            <span class="error-count" id="errorCount">0</span>
-                            <span class="warning-count" id="warningCount">0</span>
-                        </div>
-                    </div>
-                    <div class="error-list" id="errorList">
-                        <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                            Analysis will run automatically
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="syntax-modal">
+        <div class="modal-header">
+          <h2>
+            <i class="fas fa-code" style="color: var(--accent-blue)"></i> Syntax
+            Analyzer - <span id="modalAssignmentTitle">Assignment</span>
+          </h2>
+          <button class="modal-close" onclick="window.closeModal()">
+            &times;
+          </button>
         </div>
+        <div class="modal-body">
+          <!-- File List Sidebar -->
+          <div class="file-sidebar">
+            <div class="file-sidebar-header">
+              <h4><i class="fas fa-folder-open"></i> Repository Files</h4>
+              <input
+                type="text"
+                class="file-search"
+                placeholder="Search files..."
+                id="fileSearch"
+              />
+            </div>
+            <div class="file-list" id="fileList">
+              <div
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  color: var(--text-secondary);
+                "
+              >
+                <i class="fas fa-spinner fa-spin"></i> Loading files...
+              </div>
+            </div>
+          </div>
+
+          <!-- IMPROVED CODE VIEWER AREA -->
+          <div class="code-area">
+            <div class="code-toolbar">
+              <div class="current-file">
+                <i class="fas fa-file-code"></i>
+                <span id="currentFileName">Select a file</span>
+                <span class="language-badge" id="languageBadge">-</span>
+              </div>
+            </div>
+
+            <!-- High-performance code viewer container -->
+            <div class="code-viewer-container">
+              <div class="loading-overlay hidden" id="codeLoading">
+                <div class="spinner"></div>
+                <div class="loading-text">Loading file...</div>
+              </div>
+
+              <!-- Scrollable container with synchronized line numbers -->
+              <div class="code-scroll-container" id="codeScrollContainer">
+                <!-- Line numbers column -->
+                <div class="line-numbers-column" id="lineNumbersColumn"></div>
+                <!-- Code content column -->
+                <div class="code-content-column" id="codeContentColumn"></div>
+              </div>
+            </div>
+
+            <!-- IMPROVED: Feedback and Grade Section -->
+            <div class="feedback-section" id="feedbackSection">
+              <!-- This will be dynamically populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Error Panel -->
+          <div class="error-panel">
+            <div class="error-panel-header">
+              <h4>
+                <i
+                  class="fas fa-exclamation-triangle"
+                  style="color: var(--accent-yellow)"
+                ></i>
+                Issues Found
+              </h4>
+              <div class="error-summary">
+                <span class="error-count" id="errorCount">0</span>
+                <span class="warning-count" id="warningCount">0</span>
+              </div>
+            </div>
+            <div class="error-list" id="errorList">
+              <div
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  color: var(--text-secondary);
+                "
+              >
+                Analysis will run automatically
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-        (function() {
-            const API_BASE_URL = "http://localhost:5500";
-            const STUDENT_ID = "student123";
+      (function () {
+        const API_BASE_URL = "http://localhost:5500";
+        const STUDENT_ID = "student123";
 
-            // Global state
-            let currentAssignment = null;
-            let currentSubmissionId = null;
-            let pollingInterval = null;
-            let fileList = [];
-            let currentFileIndex = 0;
-            let currentErrors = [];
-            let currentWarnings = [];
-            let fileAnalysisStatus = {};
+        // Global state
+        let currentAssignment = null;
+        let currentSubmissionId = null;
+        let pollingInterval = null;
+        let fileList = [];
+        let currentFileIndex = 0;
+        let currentErrors = [];
+        let currentWarnings = [];
+        let fileAnalysisStatus = {};
+        let currentGrade = null;
+        let isReviewMode = false;
+        let currentFeedback = "";
 
-            // Load assignments on page load
-            window.addEventListener("load", loadAssignments);
+        // Load assignments on page load
+        window.addEventListener("load", loadAssignments);
 
-            function updateDoneCheckingButton() {
-                const doneBtn = document.getElementById("doneCheckingBtn");
-                if (!doneBtn) return;
-                
-                if (currentAssignment) {
-                    const statusEl = document.getElementById(`status-${currentAssignment}`);
-                    if (statusEl && statusEl.classList.contains("checked")) {
-                        doneBtn.classList.add("hidden");
-                    } else {
-                        doneBtn.classList.remove("hidden");
-                    }
-                }
+        // Calculate and update average grade
+        function updateAverageGrade() {
+          const assignmentCards = document.querySelectorAll(".assignment-card");
+          let totalGrade = 0;
+          let gradedCount = 0;
+
+          assignmentCards.forEach((card) => {
+            const gradeEl = card.querySelector(".grade-display");
+            if (gradeEl) {
+              const gradeText = gradeEl.textContent.replace("Grade: ", "");
+              const grade = parseInt(gradeText);
+              if (!isNaN(grade)) {
+                totalGrade += grade;
+                gradedCount++;
+              }
             }
+          });
 
-            async function loadAssignments() {
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/assignments/${STUDENT_ID}`);
+          const averageGradeEl = document.getElementById("averageGrade");
+          if (gradedCount > 0) {
+            const average = Math.round(totalGrade / gradedCount);
+            averageGradeEl.textContent = average;
+          } else {
+            averageGradeEl.textContent = "-";
+          }
+        }
 
-                    if (result.success && result.data.success) {
-                        renderAssignments(result.data.assignments);
+        function updateDoneCheckingButton() {
+          const doneBtn = document.getElementById("doneCheckingBtn");
+          if (!doneBtn) return;
 
-                        const checkedAssignments = result.data.assignments.filter(
-                            (a) => a.status === "reviewed" || a.status === "completed"
-                        );
-                        for (const assignment of checkedAssignments) {
-                            if (assignment.submission_id) {
-                                const analysisResult = await safeFetchJson(`${API_BASE_URL}/api/analysis/${assignment.submission_id}`);
-                                if (analysisResult.success) {
-                                    const files = analysisResult.data.files || [];
-                                    let totalErrors = 0, totalWarnings = 0, fileNames = [];
-
-                                    files.forEach((file) => {
-                                        totalErrors += file.errors?.length || 0;
-                                        totalWarnings += file.warnings?.length || 0;
-                                        if (file.file_name) fileNames.push(file.file_name);
-                                    });
-
-                                    const feedback = analysisResult.data.review?.feedback || "";
-                                    updateExistingAssignmentCard(assignment.assignment_id, totalErrors, totalWarnings, fileNames, feedback);
-                                }
-                            }
-                        }
-
-                        updateStatusCounts();
-                    } else {
-                        showError("Failed to load assignments");
-                    }
-                } catch (error) {
-                    showError("Error loading assignments: " + error.message);
-                }
+          if (currentAssignment) {
+            const statusEl = document.getElementById(
+              `status-${currentAssignment}`,
+            );
+            if (statusEl && statusEl.classList.contains("checked")) {
+              doneBtn.classList.add("hidden");
+            } else {
+              doneBtn.classList.remove("hidden");
             }
+          }
+        }
 
-            function updateExistingAssignmentCard(assignmentId, totalErrors, totalWarnings, fileList, feedback) {
-                const assignmentCard = document.querySelector(`[data-assignment-id="${assignmentId}"]`);
-                const statusEl = document.getElementById(`status-${assignmentId}`);
-                const actionBtn = assignmentCard?.querySelector(".open-analyzer");
-                const feedbackContainer = document.querySelector(`[data-assignment-id="${assignmentId}"] .assignment-feedback`);
+        // IMPROVED: Update feedback section based on review mode
+        // IMPROVED: Update feedback section based on review mode
+        function updateFeedbackSection(
+          isReviewed,
+          feedback = "",
+          grade = null,
+        ) {
+          const feedbackSection = document.getElementById("feedbackSection");
 
-                if (actionBtn) {
-                    actionBtn.innerHTML = '<i class="fas fa-search"></i> Review';
-                    actionBtn.classList.remove("btn-primary");
-                    actionBtn.classList.add("btn-secondary");
+          if (isReviewed) {
+            // REVIEW MODE - Hide the entire feedback section
+            feedbackSection.style.display = "none";
+          } else {
+            // EDIT MODE - Show input fields for feedback and grade
+            feedbackSection.style.display = "block";
+            feedbackSection.innerHTML = `
+            <h4><i class="fas fa-comment-dots" style="color: var(--accent-blue)"></i> Professor Feedback</h4>
+            <textarea class="feedback-textarea" id="feedbackText" placeholder="Enter your feedback about this code...">${escapeHtml(feedback)}</textarea>
+            
+            <div class="grade-section">
+                <h4><i class="fas fa-star" style="color: var(--accent-blue)"></i> Grade Assignment</h4>
+                <div class="grade-input-container">
+                    <input type="number" id="gradeInput" class="grade-input" min="0" max="100" step="1" placeholder="0-100" value="${grade !== null ? grade : ""}">
+                    <span class="grade-range">(0-100)</span>
+                    <button class="btn btn-secondary" id="saveGradeBtn" onclick="window.saveGrade()">Save Grade</button>
+                </div>
+                <div id="gradeError" class="grade-error"></div>
+            </div>
+            
+            <div class="feedback-actions">
+                <button class="btn btn-secondary" onclick="window.previousFile()"><i class="fas fa-chevron-left"></i> Previous</button>
+                <button class="btn btn-success" id="doneCheckingBtn" onclick="window.saveFeedbackAndDone()"><i class="fas fa-check"></i> Done Checking</button>
+                <button class="btn btn-secondary" onclick="window.nextFile()">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+        `;
+          }
+        }
+
+        // Save grade function
+        window.saveGrade = async function () {
+          const gradeInput = document.getElementById("gradeInput");
+          const gradeError = document.getElementById("gradeError");
+          const grade = parseInt(gradeInput.value);
+
+          // Validate grade
+          if (isNaN(grade) || grade < 0 || grade > 100) {
+            gradeError.textContent =
+              "Please enter a valid grade between 0 and 100";
+            return;
+          }
+
+          gradeError.textContent = "";
+
+          if (!currentSubmissionId) {
+            showError("No active submission");
+            return;
+          }
+
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/save-grade`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  submission_id: currentSubmissionId,
+                  grade: grade,
+                }),
+              },
+            );
+
+            if (result.success && result.data.success) {
+              currentGrade = grade;
+              showSuccess(`Grade ${grade} saved successfully!`);
+
+              // Update the assignment card with the grade
+              const assignmentCard = document.querySelector(
+                `[data-assignment-id="${currentAssignment}"]`,
+              );
+              if (assignmentCard) {
+                let gradeDisplay =
+                  assignmentCard.querySelector(".grade-display");
+                if (!gradeDisplay) {
+                  gradeDisplay = document.createElement("span");
+                  gradeDisplay.className = "grade-display";
+                  assignmentCard
+                    .querySelector(".assignment-details")
+                    .appendChild(gradeDisplay);
                 }
+                gradeDisplay.textContent = `Grade: ${grade}`;
+              }
 
-                if (statusEl) {
-                    statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
-                    statusEl.className = "status-badge checked";
+              // Update average grade
+              updateAverageGrade();
+            } else {
+              showError(result.error || "Failed to save grade");
+            }
+          } catch (error) {
+            showError("Error saving grade: " + error.message);
+          }
+        };
+
+        async function loadAssignments() {
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/assignments/${STUDENT_ID}`,
+            );
+
+            if (result.success && result.data.success) {
+              renderAssignments(result.data.assignments);
+
+              const checkedAssignments = result.data.assignments.filter(
+                (a) => a.status === "reviewed" || a.status === "completed",
+              );
+              for (const assignment of checkedAssignments) {
+                if (assignment.submission_id) {
+                  const analysisResult = await safeFetchJson(
+                    `${API_BASE_URL}/api/analysis/${assignment.submission_id}`,
+                  );
+                  if (analysisResult.success) {
+                    const files = analysisResult.data.files || [];
+                    let totalErrors = 0,
+                      totalWarnings = 0,
+                      fileNames = [];
+                    const grade = analysisResult.data.review?.grade || null;
+                    const feedback = analysisResult.data.review?.feedback || "";
+
+                    files.forEach((file) => {
+                      totalErrors += file.errors?.length || 0;
+                      totalWarnings += file.warnings?.length || 0;
+                      if (file.file_name) fileNames.push(file.file_name);
+                    });
+
+                    updateExistingAssignmentCard(
+                      assignment.assignment_id,
+                      totalErrors,
+                      totalWarnings,
+                      fileNames,
+                      feedback,
+                      grade,
+                    );
+                  }
                 }
+              }
 
-                if (feedbackContainer) {
-                    feedbackContainer.style.display = "block";
+              updateStatusCounts();
+              updateAverageGrade();
+            } else {
+              showError("Failed to load assignments");
+            }
+          } catch (error) {
+            showError("Error loading assignments: " + error.message);
+          }
+        }
 
-                    const fileListHtml = fileList && fileList.length > 0 ? `
+        function updateExistingAssignmentCard(
+          assignmentId,
+          totalErrors,
+          totalWarnings,
+          fileList,
+          feedback,
+          grade,
+        ) {
+          const assignmentCard = document.querySelector(
+            `[data-assignment-id="${assignmentId}"]`,
+          );
+          const statusEl = document.getElementById(`status-${assignmentId}`);
+          const actionBtn = assignmentCard?.querySelector(".open-analyzer");
+          const feedbackContainer = document.querySelector(
+            `[data-assignment-id="${assignmentId}"] .assignment-feedback`,
+          );
+
+          if (actionBtn) {
+            actionBtn.innerHTML = '<i class="fas fa-search"></i> Review';
+            actionBtn.classList.remove("btn-primary");
+            actionBtn.classList.add("btn-secondary");
+          }
+
+          if (statusEl) {
+            statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
+            statusEl.className = "status-badge checked";
+          }
+
+          // Add grade display to assignment details
+          const detailsEl = assignmentCard?.querySelector(
+            ".assignment-details",
+          );
+          if (detailsEl && grade) {
+            let gradeDisplay = detailsEl.querySelector(".grade-display");
+            if (!gradeDisplay) {
+              gradeDisplay = document.createElement("span");
+              gradeDisplay.className = "grade-display";
+              detailsEl.appendChild(gradeDisplay);
+            }
+            gradeDisplay.textContent = `Grade: ${grade}`;
+          }
+
+          if (feedbackContainer) {
+            feedbackContainer.style.display = "block";
+
+            const fileListHtml =
+              fileList && fileList.length > 0
+                ? `
                         <div style="margin-top: 15px;">
                             <strong style="color: var(--text-secondary);">Files Analyzed:</strong>
                             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                                ${fileList.map(file => `
+                                ${fileList
+                                  .map(
+                                    (file) => `
                                     <span style="background: var(--bg-input); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; border: 1px solid var(--border);">
                                         <i class="fas fa-file-code" style="color: var(--accent-blue);"></i> ${file}
                                     </span>
-                                `).join("")}
+                                `,
+                                  )
+                                  .join("")}
                             </div>
                         </div>
-                    ` : "";
+                    `
+                : "";
 
-                    feedbackContainer.innerHTML = `
+            feedbackContainer.innerHTML = `
                         <div class="feedback-summary">
                             <span class="feedback-stat errors"><i class="fas fa-times-circle"></i> ${totalErrors} Errors</span>
                             <span class="feedback-stat warnings"><i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Warnings</span>
                             <span class="feedback-stat status"><i class="fas fa-check"></i> ${fileList.length} Files</span>
+                            ${grade ? `<span class="feedback-stat grade"><i class="fas fa-star"></i> Grade: ${grade}</span>` : ""}
                         </div>
-                        ${feedback ? `
+                        ${
+                          feedback
+                            ? `
                             <div class="feedback-text">
                                 <h4><i class="fas fa-comment"></i> Professor's Feedback</h4>
                                 <p style="white-space: pre-wrap; background: var(--bg-input); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent-blue);">
                                     ${escapeHtml(feedback)}
                                 </p>
                             </div>
-                        ` : ""}
+                        `
+                            : ""
+                        }
                         ${fileListHtml}
                         <div style="margin-top: 15px; padding: 10px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
                             <div style="display: flex; align-items: center; gap: 10px; color: var(--accent-green);">
@@ -1125,25 +1488,45 @@
                             </div>
                         </div>
                     `;
-                }
-            }
+          }
+        }
 
-            function renderAssignments(assignments) {
-                const container = document.getElementById("assignmentsContainer");
+        function renderAssignments(assignments) {
+          const container = document.getElementById("assignmentsContainer");
 
-                if (!assignments || assignments.length === 0) {
-                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-folder-open fa-3x"></i><p style="margin-top: 20px;">No assignments found</p></div>`;
-                    return;
-                }
+          if (!assignments || assignments.length === 0) {
+            container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-folder-open fa-3x"></i><p style="margin-top: 20px;">No assignments found</p></div>`;
+            return;
+          }
 
-                let html = "";
-                assignments.forEach((assignment) => {
-                    const statusClass = assignment.status === "reviewed" || assignment.status === "completed" ? "checked" : "pending";
-                    const statusIcon = assignment.status === "reviewed" || assignment.status === "completed" ? "fa-check-circle" : "fa-clock";
-                    const statusText = assignment.status === "reviewed" || assignment.status === "completed" ? "Checked" : "Pending Review";
+          let html = "";
+          assignments.forEach((assignment) => {
+            const statusClass =
+              assignment.status === "reviewed" ||
+              assignment.status === "completed"
+                ? "checked"
+                : "pending";
+            const statusIcon =
+              assignment.status === "reviewed" ||
+              assignment.status === "completed"
+                ? "fa-check-circle"
+                : "fa-clock";
+            const statusText =
+              assignment.status === "reviewed" ||
+              assignment.status === "completed"
+                ? "Checked"
+                : "Pending Review";
+            const gradeDisplay = assignment.grade
+              ? `<span class="grade-display">Grade: ${assignment.grade}</span>`
+              : "";
 
-                    html += `
-                        <div class="assignment-card" data-assignment-id="${assignment.assignment_id}" data-repo-url="${assignment.repo_url}">
+            // Store submission_id as data attribute
+            const submissionIdAttr = assignment.submission_id
+              ? `data-submission-id="${assignment.submission_id}"`
+              : "";
+
+            html += `
+                        <div class="assignment-card" data-assignment-id="${assignment.assignment_id}" data-repo-url="${assignment.repo_url}" ${submissionIdAttr}>
                             <div class="assignment-header">
                                 <h3><i class="fas ${assignment.language === "C" ? "fa-code" : "fa-copyright"}" style="color: var(--accent-blue);"></i> ${assignment.title}</h3>
                                 <span class="status-badge ${statusClass}" id="status-${assignment.assignment_id}">
@@ -1158,6 +1541,7 @@
                                     <a href="${assignment.repo_url}" class="repo-link" target="_blank"><i class="fab fa-github"></i> ${assignment.repo_url.split("/").slice(-2).join("/")}</a>
                                 </div>
                                 <div class="detail-item"><strong><i class="fas fa-file-code"></i> Language</strong> ${assignment.language}</div>
+                                ${gradeDisplay}
                             </div>
                             <div class="assignment-actions">
                                 <button class="btn btn-primary open-analyzer" data-assignment="${assignment.assignment_id}">
@@ -1165,7 +1549,9 @@
                                 </button>
                             </div>
                             <div class="assignment-feedback" id="feedback-${assignment.assignment_id}" style="display: ${assignment.status === "reviewed" ? "block" : "none"};">
-                                ${assignment.status === "reviewed" ? `
+                                ${
+                                  assignment.status === "reviewed"
+                                    ? `
                                     <div class="feedback-summary">
                                         <span class="feedback-stat errors"><i class="fas fa-times-circle"></i> ${assignment.errors_count || 0} Errors</span>
                                         <span class="feedback-stat warnings"><i class="fas fa-exclamation-triangle"></i> ${assignment.warnings_count || 0} Warnings</span>
@@ -1175,169 +1561,279 @@
                                         <h4><i class="fas fa-comment"></i> Review Summary</h4>
                                         <p>Assignment has been reviewed and analyzed.</p>
                                     </div>
-                                ` : ""}
+                                `
+                                    : ""
+                                }
                             </div>
                         </div>
                     `;
-                });
+          });
 
-                container.innerHTML = html;
-                document.querySelectorAll(".open-analyzer").forEach((btn) => {
-                    btn.addEventListener("click", openAnalyzer);
-                });
+          container.innerHTML = html;
+          document.querySelectorAll(".open-analyzer").forEach((btn) => {
+            btn.addEventListener("click", openAnalyzer);
+          });
+        }
+
+        async function openAnalyzer(event) {
+          const btn = event.currentTarget;
+          const assignmentId = btn.dataset.assignment;
+          const assignmentCard = document.querySelector(
+            `[data-assignment-id="${assignmentId}"]`,
+          );
+          const assignmentTitle =
+            assignmentCard?.querySelector("h3")?.textContent || assignmentId;
+          const repoUrl = assignmentCard?.dataset.repoUrl;
+          const submissionId = assignmentCard?.dataset.submissionId;
+          const statusEl = document.getElementById(`status-${assignmentId}`);
+          const isReviewed = statusEl && statusEl.classList.contains("checked");
+
+          document.getElementById("modalAssignmentTitle").textContent =
+            assignmentTitle;
+          currentAssignment = assignmentId;
+
+          if (submissionId) {
+            currentSubmissionId = submissionId;
+          }
+
+          document.getElementById("syntaxModal").classList.add("active");
+
+          // Clear previous feedback section
+          const feedbackSection = document.getElementById("feedbackSection");
+          feedbackSection.innerHTML =
+            '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+          feedbackSection.style.display = "block";
+
+          showLoading("Initializing analysis...");
+
+          try {
+            const healthCheck = await safeFetchJson(
+              `${API_BASE_URL}/api/health`,
+            );
+            if (!healthCheck.success) {
+              showError(
+                `Cannot connect to server at ${API_BASE_URL}. Make sure the backend is running.`,
+              );
+              return;
             }
 
-            async function openAnalyzer(event) {
-                const btn = event.currentTarget;
-                const assignmentId = btn.dataset.assignment;
-                const assignmentCard = document.querySelector(`[data-assignment-id="${assignmentId}"]`);
-                const assignmentTitle = assignmentCard?.querySelector("h3")?.textContent || assignmentId;
-                const repoUrl = assignmentCard?.dataset.repoUrl;
+            // Always submit the repo to get/clone the repository
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/submit-repo`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  assignment_id: assignmentId,
+                  repo_url: repoUrl,
+                  student_id: STUDENT_ID,
+                }),
+              },
+            );
 
-                document.getElementById("modalAssignmentTitle").textContent = assignmentTitle;
-                currentAssignment = assignmentId;
-                document.getElementById("syntaxModal").classList.add("active");
-                
-                updateDoneCheckingButton();
-                showLoading("Initializing analysis...");
+            if (result.success && result.data.success) {
+              currentSubmissionId = result.data.submission_id;
 
-                try {
-                    const healthCheck = await safeFetchJson(`${API_BASE_URL}/api/health`);
-                    if (!healthCheck.success) {
-                        showError(`Cannot connect to server at ${API_BASE_URL}. Make sure the backend is running.`);
-                        return;
-                    }
+              // Update the assignment card with the new submission_id
+              if (assignmentCard) {
+                assignmentCard.dataset.submissionId = currentSubmissionId;
+              }
 
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/submit-repo`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ assignment_id: assignmentId, repo_url: repoUrl, student_id: STUDENT_ID }),
-                    });
+              // Check if this is a reviewed assignment
+              if (result.data.status === "reviewed" || isReviewed) {
+                // REVIEW MODE - Hide feedback section
+                isReviewMode = true;
+                updateFeedbackSection(true);
 
-                    if (result.success && result.data.success) {
-                        currentSubmissionId = result.data.submission_id;
-                        startPollingAnalysis(currentSubmissionId);
-                        await loadAnalyzedFiles(currentSubmissionId);
+                // For reviewed assignments, we need to check if analysis is already complete
+                // or if we need to wait for it
+                const analysisCheck = await safeFetchJson(
+                  `${API_BASE_URL}/api/analysis/${currentSubmissionId}`,
+                );
+
+                if (
+                  analysisCheck.success &&
+                  analysisCheck.data.submission.status === "completed"
+                ) {
+                  // Analysis already complete, load files directly
+                  console.log("✅ Analysis already complete, loading files...");
+                  await loadAnalyzedFiles(currentSubmissionId);
+
+                  // Remove loading overlay
+                  const loadingEl = document.getElementById("analysisLoading");
+                  if (loadingEl) loadingEl.remove();
+
+                  // Remove progress bar if it exists
+                  const progressEl =
+                    document.querySelector(".analysis-progress");
+                  if (progressEl) progressEl.remove();
+                } else {
+                  // Analysis still running, start polling
+                  console.log("⏳ Analysis in progress, starting polling...");
+                  startPollingAnalysis(currentSubmissionId);
+                }
+              } else {
+                // EDIT MODE - Show input fields
+                isReviewMode = false;
+                updateFeedbackSection(false);
+                startPollingAnalysis(currentSubmissionId);
+              }
+            } else {
+              showError(result.data?.error || "Failed to start analysis");
+            }
+          } catch (error) {
+            showError("Error: " + error.message);
+          }
+        }
+
+        async function safeFetchJson(url, options = {}) {
+          try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+              const text = await response.text();
+              throw new Error(
+                `HTTP ${response.status}: ${text.substring(0, 100)}`,
+              );
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+              const text = await response.text();
+              console.error("Non-JSON response:", text.substring(0, 200));
+              throw new Error("Server returned non-JSON response");
+            }
+            const data = await response.json();
+            return { success: true, data };
+          } catch (error) {
+            console.error("Fetch error:", error);
+            return { success: false, error: error.message };
+          }
+        }
+
+        function showError(message) {
+          console.error("Error:", message);
+          const loadingEl = document.getElementById("analysisLoading");
+          if (loadingEl) loadingEl.remove();
+          const toast = document.createElement("div");
+          toast.className = "error-toast";
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 5000);
+          const fileListEl = document.getElementById("fileList");
+          if (fileListEl) {
+            fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--accent-red);"><i class="fas fa-exclamation-triangle"></i> Error: ${message}</div>`;
+          }
+        }
+
+        function showSuccess(message) {
+          const toast = document.createElement("div");
+          toast.className = "success-toast";
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showLoading(message) {
+          const existingLoading = document.getElementById("analysisLoading");
+          if (existingLoading) existingLoading.remove();
+          const modalBody = document.querySelector(".modal-body");
+          const loadingOverlay = document.createElement("div");
+          loadingOverlay.className = "loading-overlay";
+          loadingOverlay.id = "analysisLoading";
+          loadingOverlay.innerHTML = `<div class="spinner"></div><div class="loading-text">${message}</div>`;
+          modalBody.appendChild(loadingOverlay);
+        }
+
+        function updateStatusCounts() {
+          const totalAssignments =
+            document.querySelectorAll(".assignment-card").length;
+          const completedAssignments = document.querySelectorAll(
+            ".status-badge.checked",
+          ).length;
+          const pendingAssignments = totalAssignments - completedAssignments;
+          document.getElementById("pendingCount").textContent =
+            pendingAssignments;
+          document.getElementById("completedCount").textContent =
+            completedAssignments;
+        }
+
+        function closeModal() {
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+          document.getElementById("syntaxModal").classList.remove("active");
+        }
+
+        function startPollingAnalysis(submissionId) {
+          if (pollingInterval) clearInterval(pollingInterval);
+
+          pollingInterval = setInterval(async () => {
+            try {
+              const result = await safeFetchJson(
+                `${API_BASE_URL}/api/analysis/${submissionId}`,
+              );
+
+              if (result.success && result.data.submission) {
+                const submission = result.data.submission;
+
+                // Only show progress if not in review mode or if analysis not complete
+                if (!isReviewMode || submission.status !== "completed") {
+                  updateAnalysisProgress(submission);
+                }
+
+                if (
+                  submission.status === "completed" ||
+                  submission.status === "failed"
+                ) {
+                  clearInterval(pollingInterval);
+                  pollingInterval = null;
+
+                  // Remove progress bar
+                  const progressEl =
+                    document.querySelector(".analysis-progress");
+                  if (progressEl) progressEl.remove();
+
+                  // Remove loading overlay
+                  const loadingEl = document.getElementById("analysisLoading");
+                  if (loadingEl) {
+                    loadingEl.remove();
+                    console.log(
+                      "✅ Loading overlay removed - analysis complete",
+                    );
+                  }
+
+                  if (submission.status === "completed") {
+                    await loadAnalyzedFiles(submissionId);
+
+                    // Only show success message in edit mode
+                    if (!isReviewMode) {
+                      showSuccess(
+                        `Analysis completed! Found ${submission.errors_count || 0} errors, ${submission.warnings_count || 0} warnings.`,
+                      );
                     } else {
-                        showError(result.data?.error || "Failed to start analysis");
+                      console.log("✅ Analysis complete in review mode");
                     }
-                } catch (error) {
-                    showError("Error: " + error.message);
+                  } else if (submission.status === "failed") {
+                    showError(submission.error || "Analysis failed");
+                  }
                 }
+              }
+            } catch (error) {
+              console.error("Polling error:", error);
             }
+          }, 2000);
+        }
 
-            async function safeFetchJson(url, options = {}) {
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) {
-                        const text = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
-                    }
-                    const contentType = response.headers.get("content-type");
-                    if (!contentType || !contentType.includes("application/json")) {
-                        const text = await response.text();
-                        console.error("Non-JSON response:", text.substring(0, 200));
-                        throw new Error("Server returned non-JSON response");
-                    }
-                    const data = await response.json();
-                    return { success: true, data };
-                } catch (error) {
-                    console.error("Fetch error:", error);
-                    return { success: false, error: error.message };
-                }
-            }
-
-            function showError(message) {
-                console.error("Error:", message);
-                const loadingEl = document.getElementById("analysisLoading");
-                if (loadingEl) loadingEl.remove();
-                const toast = document.createElement("div");
-                toast.className = "error-toast";
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 5000);
-                const fileListEl = document.getElementById("fileList");
-                if (fileListEl) {
-                    fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--accent-red);"><i class="fas fa-exclamation-triangle"></i> Error: ${message}</div>`;
-                }
-            }
-
-            function showSuccess(message) {
-                const toast = document.createElement("div");
-                toast.className = "success-toast";
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
-            }
-
-            function showLoading(message) {
-                const existingLoading = document.getElementById("analysisLoading");
-                if (existingLoading) existingLoading.remove();
-                const modalBody = document.querySelector(".modal-body");
-                const loadingOverlay = document.createElement("div");
-                loadingOverlay.className = "loading-overlay";
-                loadingOverlay.id = "analysisLoading";
-                loadingOverlay.innerHTML = `<div class="spinner"></div><div class="loading-text">${message}</div>`;
-                modalBody.appendChild(loadingOverlay);
-            }
-
-            function updateStatusCounts() {
-                const totalAssignments = document.querySelectorAll(".assignment-card").length;
-                const completedAssignments = document.querySelectorAll(".status-badge.checked").length;
-                const pendingAssignments = totalAssignments - completedAssignments;
-                document.getElementById("pendingCount").textContent = pendingAssignments;
-                document.getElementById("completedCount").textContent = completedAssignments;
-            }
-
-            function closeModal() {
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
-                }
-                document.getElementById("syntaxModal").classList.remove("active");
-            }
-
-            function startPollingAnalysis(submissionId) {
-                if (pollingInterval) clearInterval(pollingInterval);
-                pollingInterval = setInterval(async () => {
-                    try {
-                        const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
-                        if (result.success && result.data.submission) {
-                            const submission = result.data.submission;
-                            updateAnalysisProgress(submission);
-                            if (submission.status === "completed" || submission.status === "failed") {
-                                clearInterval(pollingInterval);
-                                pollingInterval = null;
-                                const progressEl = document.querySelector(".analysis-progress");
-                                if (progressEl) progressEl.remove();
-                                const loadingEl = document.getElementById("analysisLoading");
-                                if (loadingEl) {
-                                    loadingEl.remove();
-                                    console.log("✅ Loading overlay removed - analysis complete");
-                                }
-                                if (submission.status === "completed") {
-                                    await loadAnalyzedFiles(submissionId);
-                                    showSuccess(`Analysis completed! Found ${submission.errors_count || 0} errors, ${submission.warnings_count || 0} warnings.`);
-                                } else if (submission.status === "failed") {
-                                    showError(submission.error || "Analysis failed");
-                                }
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Polling error:", error);
-                    }
-                }, 2000);
-            }
-
-            function updateAnalysisProgress(submission) {
-                const existingProgress = document.querySelector(".analysis-progress");
-                if (existingProgress) existingProgress.remove();
-                const totalFiles = submission.total_files || 0;
-                const analyzedFiles = submission.analyzed_files || 0;
-                const progress = totalFiles > 0 ? (analyzedFiles / totalFiles) * 100 : 0;
-                const progressEl = document.createElement("div");
-                progressEl.className = "analysis-progress";
-                progressEl.innerHTML = `
+        function updateAnalysisProgress(submission) {
+          const existingProgress = document.querySelector(".analysis-progress");
+          if (existingProgress) existingProgress.remove();
+          const totalFiles = submission.total_files || 0;
+          const analyzedFiles = submission.analyzed_files || 0;
+          const progress =
+            totalFiles > 0 ? (analyzedFiles / totalFiles) * 100 : 0;
+          const progressEl = document.createElement("div");
+          progressEl.className = "analysis-progress";
+          progressEl.innerHTML = `
                     <div class="progress-info">
                         <span><i class="fas fa-spinner fa-spin"></i> Analyzing files...</span>
                         <span>${analyzedFiles}/${totalFiles}</span>
@@ -1346,317 +1842,427 @@
                         <div class="progress-bar-fill" style="width: ${progress}%"></div>
                     </div>
                 `;
-                document.querySelector(".modal-header").appendChild(progressEl);
-            }
+          document.querySelector(".modal-header").appendChild(progressEl);
+        }
 
-            async function loadAnalyzedFiles(submissionId) {
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/files/${submissionId}`);
-                    if (result.success && result.data.success) {
-                        fileList = result.data.files || [];
-                        if (fileList.length === 0) {
-                            const fileListEl = document.getElementById("fileList");
-                            fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fas fa-info-circle"></i> No C/C++ files found in repository</div>`;
-                            return;
-                        }
-                        renderFileList();
-                        if (fileList.length > 0) {
-                            await loadFileWithResults(0, submissionId);
-                        }
-                    } else {
-                        showError(result.error || "Failed to load files");
-                    }
-                } catch (error) {
-                    console.error("Error loading files:", error);
-                    showError("Failed to load files: " + error.message);
-                }
-            }
-
-            // IMPROVED: Load file with optimized code viewer
-            async function loadFileWithResults(index, submissionId) {
-                if (index < 0 || index >= fileList.length) return;
-                currentFileIndex = index;
-                const file = fileList[index];
-
-                try {
-                    document.getElementById("codeLoading").classList.remove("hidden");
-                    
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
-                    if (result.success && result.data.files) {
-                        const fileResult = result.data.files.find(f => f.file_path === file.file_path);
-                        if (fileResult) {
-                            currentErrors = fileResult.errors || [];
-                            currentWarnings = fileResult.warnings || [];
-                            fileAnalysisStatus = { [file.file_path]: { errors: currentErrors.length, warnings: currentWarnings.length } };
-                            updateErrorPanel();
-                            
-                            // Display code with optimized viewer
-                            if (fileResult.content) {
-                                displayCodeOptimized(fileResult.content, fileResult.language || "c");
-                            } else {
-                                displayCodeOptimized(`// No content available for ${file.file_name}\n// The file might be binary or empty.`, file.language || "c");
-                            }
-                        }
-                    }
-                    
-                    document.getElementById("currentFileName").textContent = file.file_name || "Unknown";
-                    document.getElementById("languageBadge").textContent = file.language || "c";
-                    document.getElementById("codeLoading").classList.add("hidden");
-                    
-                    const analysisLoading = document.getElementById("analysisLoading");
-                    if (analysisLoading) analysisLoading.remove();
-                    
-                    renderFileList();
-                } catch (error) {
-                    console.error("Error loading file:", error);
-                    document.getElementById("codeLoading").classList.add("hidden");
-                    displayCodeOptimized(`// Error loading file: ${error.message}`, "c");
-                }
-            }
-
-            // IMPROVED: Optimized code display with virtual scrolling capability
-            function displayCodeOptimized(code, language) {
-                const lines = code.split('\n');
-                const lineNumbersColumn = document.getElementById('lineNumbersColumn');
-                const codeContentColumn = document.getElementById('codeContentColumn');
-                const scrollContainer = document.getElementById('codeScrollContainer');
-                
-                // Clear previous content
-                lineNumbersColumn.innerHTML = '';
-                codeContentColumn.innerHTML = '';
-                
-                // Use DocumentFragment for better performance
-                const lineNumbersFragment = document.createDocumentFragment();
-                const codeContentFragment = document.createDocumentFragment();
-                
-                // Calculate line count for performance monitoring
-                const lineCount = lines.length;
-                console.log(`Displaying ${lineCount} lines of code`);
-                
-                // For very large files, we could implement virtualization
-                // But for now, we'll render all lines with optimized DOM
-                const startTime = performance.now();
-                
-                for (let i = 0; i < lineCount; i++) {
-                    const lineNumber = document.createElement('div');
-                    lineNumber.textContent = i + 1;
-                    lineNumbersFragment.appendChild(lineNumber);
-                    
-                    const lineContent = document.createElement('div');
-                    lineContent.className = 'code-line';
-                    
-                    // Check for errors/warnings on this line
-                    const hasError = currentErrors.some(e => e.line === i + 1);
-                    const hasWarning = currentWarnings.some(w => w.line === i + 1);
-                    
-                    if (hasError) {
-                        lineContent.classList.add('error-line');
-                    } else if (hasWarning) {
-                        lineContent.classList.add('warning-line');
-                    }
-                    
-                    lineContent.textContent = lines[i] || ' ';
-                    codeContentFragment.appendChild(lineContent);
-                }
-                
-                lineNumbersColumn.appendChild(lineNumbersFragment);
-                codeContentColumn.appendChild(codeContentFragment);
-                
-                const endTime = performance.now();
-                console.log(`Code rendering took ${endTime - startTime}ms`);
-                
-                // Reset scroll position
-                if (scrollContainer) {
-                    scrollContainer.scrollTop = 0;
-                    scrollContainer.scrollLeft = 0;
-                }
-            }
-
-            function renderFileList(filter = "") {
+        async function loadAnalyzedFiles(submissionId) {
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/files/${submissionId}`,
+            );
+            if (result.success && result.data.success) {
+              fileList = result.data.files || [];
+              if (fileList.length === 0) {
                 const fileListEl = document.getElementById("fileList");
-                if (!fileList || fileList.length === 0) {
-                    fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fas fa-info-circle"></i> No files available</div>`;
-                    return;
-                }
-                const filteredFiles = filter ? fileList.filter(f => (f.file_name || f.name || "").toLowerCase().includes(filter.toLowerCase())) : fileList;
-                fileListEl.innerHTML = filteredFiles.map((file, index) => {
-                    const originalIndex = fileList.findIndex(f => f.file_path === file.file_path);
-                    const status = fileAnalysisStatus[file.file_path];
-                    let statusClass = "", statusIcon = "";
-                    if (status) {
-                        if (status.errors > 0) {
-                            statusClass = "has-errors";
-                            statusIcon = '<i class="fas fa-times-circle file-status-icon" style="color: var(--accent-red);"></i>';
-                        } else if (status.warnings > 0) {
-                            statusClass = "has-warnings";
-                            statusIcon = '<i class="fas fa-exclamation-circle file-status-icon" style="color: var(--accent-yellow);"></i>';
-                        } else {
-                            statusClass = "checked";
-                            statusIcon = '<i class="fas fa-check-circle file-status-icon" style="color: var(--accent-green);"></i>';
-                        }
-                    }
-                    const fileName = file.file_name || file.name || file.file_path?.split("/").pop() || "Unknown";
-                    return `<div class="file-item ${statusClass} ${originalIndex === currentFileIndex ? "active" : ""}" onclick="window.loadFile(${originalIndex})"><i class="fas fa-file-code file-icon"></i><span class="file-name" title="${file.file_path || fileName}">${fileName}</span>${statusIcon}</div>`;
-                }).join("");
+                fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fas fa-info-circle"></i> No files found in repository</div>`;
+                return;
+              }
+              renderFileList();
+              if (fileList.length > 0) {
+                await loadFileWithResults(0, submissionId);
+              }
+            } else {
+              showError(result.error || "Failed to load files");
+            }
+          } catch (error) {
+            console.error("Error loading files:", error);
+            showError("Failed to load files: " + error.message);
+          }
+        }
+
+        // Load file with optimized code viewer
+        async function loadFileWithResults(index, submissionId) {
+          if (index < 0 || index >= fileList.length) return;
+          currentFileIndex = index;
+          const file = fileList[index];
+
+          try {
+            document.getElementById("codeLoading").classList.remove("hidden");
+
+            // Use the files we already have from fileList
+            if (file.content) {
+              currentErrors = file.errors || [];
+              currentWarnings = file.warnings || [];
+              fileAnalysisStatus = {
+                [file.file_path]: {
+                  errors: currentErrors.length,
+                  warnings: currentWarnings.length,
+                },
+              };
+              updateErrorPanel();
+              displayCodeOptimized(file.content, file.language || "c");
+            } else {
+              displayCodeOptimized(
+                `// No content available for ${file.file_name}`,
+                file.language || "c",
+              );
             }
 
-            // Load file with optimized viewer
-            function loadFile(index) {
-                if (index < 0 || index >= fileList.length) return;
-                currentFileIndex = index;
-                const file = fileList[index];
-                
-                document.querySelectorAll(".file-item").forEach((el, i) => {
-                    const filePath = fileList[i]?.file_path;
-                    el.classList.toggle("active", filePath === file.file_path);
+            document.getElementById("currentFileName").textContent =
+              file.file_name || "Unknown";
+            document.getElementById("languageBadge").textContent =
+              file.language || "c";
+            document.getElementById("codeLoading").classList.add("hidden");
+
+            const analysisLoading = document.getElementById("analysisLoading");
+            if (analysisLoading) analysisLoading.remove();
+
+            renderFileList();
+          } catch (error) {
+            console.error("Error loading file:", error);
+            document.getElementById("codeLoading").classList.add("hidden");
+            displayCodeOptimized(
+              `// Error loading file: ${error.message}`,
+              "c",
+            );
+          }
+        }
+
+        // Optimized code display with virtual scrolling capability
+        function displayCodeOptimized(code, language) {
+          const lines = code.split("\n");
+          const lineNumbersColumn =
+            document.getElementById("lineNumbersColumn");
+          const codeContentColumn =
+            document.getElementById("codeContentColumn");
+          const scrollContainer = document.getElementById(
+            "codeScrollContainer",
+          );
+
+          // Clear previous content
+          lineNumbersColumn.innerHTML = "";
+          codeContentColumn.innerHTML = "";
+
+          // Use DocumentFragment for better performance
+          const lineNumbersFragment = document.createDocumentFragment();
+          const codeContentFragment = document.createDocumentFragment();
+
+          const lineCount = lines.length;
+
+          for (let i = 0; i < lineCount; i++) {
+            const lineNumber = document.createElement("div");
+            lineNumber.textContent = i + 1;
+            lineNumbersFragment.appendChild(lineNumber);
+
+            const lineContent = document.createElement("div");
+            lineContent.className = "code-line";
+
+            // Check for errors/warnings on this line
+            const hasError = currentErrors.some((e) => e.line === i + 1);
+            const hasWarning = currentWarnings.some((w) => w.line === i + 1);
+
+            if (hasError) {
+              lineContent.classList.add("error-line");
+            } else if (hasWarning) {
+              lineContent.classList.add("warning-line");
+            }
+
+            lineContent.textContent = lines[i] || " ";
+            codeContentFragment.appendChild(lineContent);
+          }
+
+          lineNumbersColumn.appendChild(lineNumbersFragment);
+          codeContentColumn.appendChild(codeContentFragment);
+
+          // Reset scroll position
+          if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
+            scrollContainer.scrollLeft = 0;
+          }
+        }
+
+        function renderFileList(filter = "") {
+          const fileListEl = document.getElementById("fileList");
+          if (!fileList || fileList.length === 0) {
+            fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fas fa-info-circle"></i> No files available</div>`;
+            return;
+          }
+          const filteredFiles = filter
+            ? fileList.filter((f) =>
+                (f.file_name || f.name || "")
+                  .toLowerCase()
+                  .includes(filter.toLowerCase()),
+              )
+            : fileList;
+          fileListEl.innerHTML = filteredFiles
+            .map((file, index) => {
+              const originalIndex = fileList.findIndex(
+                (f) => f.file_path === file.file_path,
+              );
+              const status = fileAnalysisStatus[file.file_path];
+              let statusClass = "",
+                statusIcon = "";
+              if (status) {
+                if (status.errors > 0) {
+                  statusClass = "has-errors";
+                  statusIcon =
+                    '<i class="fas fa-times-circle file-status-icon" style="color: var(--accent-red);"></i>';
+                } else if (status.warnings > 0) {
+                  statusClass = "has-warnings";
+                  statusIcon =
+                    '<i class="fas fa-exclamation-circle file-status-icon" style="color: var(--accent-yellow);"></i>';
+                } else {
+                  statusClass = "checked";
+                  statusIcon =
+                    '<i class="fas fa-check-circle file-status-icon" style="color: var(--accent-green);"></i>';
+                }
+              }
+              const fileName =
+                file.file_name ||
+                file.name ||
+                file.file_path?.split("/").pop() ||
+                "Unknown";
+              return `<div class="file-item ${statusClass} ${originalIndex === currentFileIndex ? "active" : ""}" onclick="window.loadFile(${originalIndex})"><i class="fas fa-file-code file-icon"></i><span class="file-name" title="${file.file_path || fileName}">${fileName}</span>${statusIcon}</div>`;
+            })
+            .join("");
+        }
+
+        // Load file with optimized viewer
+        function loadFile(index) {
+          if (index < 0 || index >= fileList.length) return;
+          currentFileIndex = index;
+          const file = fileList[index];
+
+          document.querySelectorAll(".file-item").forEach((el, i) => {
+            const filePath = fileList[i]?.file_path;
+            el.classList.toggle("active", filePath === file.file_path);
+          });
+
+          document.getElementById("currentFileName").textContent =
+            file.file_name || file.name || "Unknown";
+          document.getElementById("languageBadge").textContent =
+            file.language || "c";
+          document.getElementById("codeLoading").classList.remove("hidden");
+
+          setTimeout(() => {
+            if (file.content) {
+              currentErrors = file.errors || [];
+              currentWarnings = file.warnings || [];
+              fileAnalysisStatus = {
+                [file.file_path]: {
+                  errors: currentErrors.length,
+                  warnings: currentWarnings.length,
+                },
+              };
+              updateErrorPanel();
+              displayCodeOptimized(file.content, file.language || "c");
+            } else {
+              displayCodeOptimized(
+                `// No content available for ${file.file_name}`,
+                file.language || "c",
+              );
+            }
+            document.getElementById("codeLoading").classList.add("hidden");
+
+            const analysisLoading = document.getElementById("analysisLoading");
+            if (analysisLoading) analysisLoading.remove();
+
+            renderFileList();
+          }, 100);
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        function updateErrorPanel() {
+          const errorListEl = document.getElementById("errorList");
+          const errorCountEl = document.getElementById("errorCount");
+          const warningCountEl = document.getElementById("warningCount");
+
+          errorCountEl.textContent = currentErrors.length;
+          warningCountEl.textContent = currentWarnings.length;
+
+          if (currentErrors.length === 0 && currentWarnings.length === 0) {
+            errorListEl.innerHTML = `<div class="no-errors"><i class="fas fa-check-circle"></i><div>No issues found in this file!</div></div>`;
+            return;
+          }
+
+          let html =
+            '<div style="margin-bottom: 10px;"><strong>Issues in current file:</strong></div>';
+          if (currentErrors.length > 0) {
+            html +=
+              '<div style="margin-bottom: 10px;"><span style="color: var(--accent-red);"><i class="fas fa-times-circle"></i> Errors:</span></div>';
+            currentErrors.forEach((err) => {
+              html += `<div class="error-item" style="margin-bottom: 8px;"><div class="error-line-num" style="font-weight: 600;">Line ${err.line || 0}</div><div class="error-message" style="color: var(--accent-red);">${escapeHtml(err.message || "Unknown error")}</div></div>`;
+            });
+          }
+          if (currentWarnings.length > 0) {
+            if (currentErrors.length > 0)
+              html += '<div style="margin: 15px 0 10px 0;"></div>';
+            html +=
+              '<div style="margin-bottom: 10px;"><span style="color: var(--accent-yellow);"><i class="fas fa-exclamation-triangle"></i> Warnings:</span></div>';
+            currentWarnings.forEach((warn) => {
+              html += `<div class="error-item warning" style="margin-bottom: 8px;"><div class="error-line-num" style="font-weight: 600;">Line ${warn.line || 0}</div><div class="error-message" style="color: var(--accent-yellow);">${escapeHtml(warn.message || "Unknown warning")}</div></div>`;
+            });
+          }
+          errorListEl.innerHTML = html;
+        }
+
+        function previousFile() {
+          if (currentFileIndex > 0) loadFile(currentFileIndex - 1);
+        }
+
+        function nextFile() {
+          if (currentFileIndex < fileList.length - 1)
+            loadFile(currentFileIndex + 1);
+        }
+
+        async function saveFeedbackAndDone() {
+          const feedback = document.getElementById("feedbackText")?.value || "";
+          const gradeInput = document.getElementById("gradeInput");
+          const grade = gradeInput ? parseInt(gradeInput.value) : null;
+
+          if (!currentSubmissionId) {
+            showError("No active analysis session");
+            return;
+          }
+
+          // Validate grade if provided
+          if (grade && (isNaN(grade) || grade < 0 || grade > 100)) {
+            showError("Please enter a valid grade between 0 and 100");
+            return;
+          }
+
+          showLoading("Saving feedback...");
+
+          try {
+            // Save grade first if provided
+            if (grade && !isNaN(grade)) {
+              await safeFetchJson(`${API_BASE_URL}/api/save-grade`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  submission_id: currentSubmissionId,
+                  grade: grade,
+                }),
+              });
+            }
+
+            // Save feedback
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/save-feedback`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  submission_id: currentSubmissionId,
+                  feedback: feedback,
+                  reviewer_id: "instructor1",
+                }),
+              },
+            );
+
+            const loading = document.getElementById("analysisLoading");
+            if (loading) loading.remove();
+
+            if (result.success && result.data.success) {
+              const analysisResult = await safeFetchJson(
+                `${API_BASE_URL}/api/analysis/${currentSubmissionId}`,
+              );
+              if (analysisResult.success) {
+                const files = analysisResult.data.files || [];
+                const fileDetails = files.map((file) => ({
+                  name: file.file_name,
+                  errors: file.errors || [],
+                  warnings: file.warnings || [],
+                }));
+                await updateAssignmentCardWithResults(
+                  currentSubmissionId,
+                  feedback,
+                  fileDetails,
+                  grade,
+                );
+              }
+              showSuccess("Review completed! All files have been analyzed.");
+              closeModal();
+              await loadAssignments();
+              updateStatusCounts();
+              updateAverageGrade();
+            } else {
+              showError(result.error || "Failed to save feedback");
+            }
+          } catch (error) {
+            showError("Error saving feedback: " + error.message);
+          }
+        }
+
+        async function updateAssignmentCardWithResults(
+          submissionId,
+          feedback,
+          fileDetails,
+          grade,
+        ) {
+          try {
+            const result = await safeFetchJson(
+              `${API_BASE_URL}/api/analysis/${submissionId}`,
+            );
+            if (result.success && result.data.submission) {
+              const submission = result.data.submission;
+              const assignmentId = submission.assignment_id;
+              const files = result.data.files || [];
+              const assignmentCard = document.querySelector(
+                `[data-assignment-id="${assignmentId}"]`,
+              );
+              const statusEl = document.getElementById(
+                `status-${assignmentId}`,
+              );
+              const actionBtn = assignmentCard?.querySelector(".open-analyzer");
+              const feedbackContainer = document.querySelector(
+                `[data-assignment-id="${assignmentId}"] .assignment-feedback`,
+              );
+              const detailsEl = assignmentCard?.querySelector(
+                ".assignment-details",
+              );
+
+              if (actionBtn) {
+                actionBtn.innerHTML = '<i class="fas fa-search"></i> Review';
+                actionBtn.classList.remove("btn-primary");
+                actionBtn.classList.add("btn-secondary");
+              }
+              if (statusEl) {
+                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
+                statusEl.className = "status-badge checked";
+              }
+
+              // Add grade display to assignment details
+              if (detailsEl && grade) {
+                let gradeDisplay = detailsEl.querySelector(".grade-display");
+                if (!gradeDisplay) {
+                  gradeDisplay = document.createElement("span");
+                  gradeDisplay.className = "grade-display";
+                  detailsEl.appendChild(gradeDisplay);
+                }
+                gradeDisplay.textContent = `Grade: ${grade}`;
+              }
+
+              if (feedbackContainer) {
+                feedbackContainer.style.display = "block";
+                let totalErrors = 0,
+                  totalWarnings = 0;
+                files.forEach((file) => {
+                  totalErrors += file.errors?.length || 0;
+                  totalWarnings += file.warnings?.length || 0;
                 });
-                
-                document.getElementById("currentFileName").textContent = file.file_name || file.name || "Unknown";
-                document.getElementById("languageBadge").textContent = file.language || "c";
-                document.getElementById("codeLoading").classList.remove("hidden");
-                
-                // Use setTimeout to allow UI to update
-                setTimeout(() => {
-                    if (file.content) {
-                        currentErrors = file.errors || [];
-                        currentWarnings = file.warnings || [];
-                        fileAnalysisStatus = { [file.file_path]: { errors: currentErrors.length, warnings: currentWarnings.length } };
-                        updateErrorPanel();
-                        displayCodeOptimized(file.content, file.language || "c");
-                    } else {
-                        displayCodeOptimized(`// No content available for ${file.file_name}`, file.language || "c");
-                    }
-                    document.getElementById("codeLoading").classList.add("hidden");
-                    
-                    const analysisLoading = document.getElementById("analysisLoading");
-                    if (analysisLoading) analysisLoading.remove();
-                    
-                    renderFileList();
-                }, 100);
-            }
 
-            function escapeHtml(text) {
-                const div = document.createElement("div");
-                div.textContent = text;
-                return div.innerHTML;
-            }
+                const filesWithIssues = files.filter(
+                  (f) => f.errors?.length > 0 || f.warnings?.length > 0,
+                );
+                const filesWithoutIssues = files.filter(
+                  (f) =>
+                    (!f.errors || f.errors.length === 0) &&
+                    (!f.warnings || f.warnings.length === 0),
+                );
+                let filesHtml = "";
 
-            function updateErrorPanel() {
-                const errorListEl = document.getElementById("errorList");
-                const errorCountEl = document.getElementById("errorCount");
-                const warningCountEl = document.getElementById("warningCount");
-
-                errorCountEl.textContent = currentErrors.length;
-                warningCountEl.textContent = currentWarnings.length;
-
-                if (currentErrors.length === 0 && currentWarnings.length === 0) {
-                    errorListEl.innerHTML = `<div class="no-errors"><i class="fas fa-check-circle"></i><div>No issues found in this file!</div></div>`;
-                    return;
-                }
-
-                let html = '<div style="margin-bottom: 10px;"><strong>Issues in current file:</strong></div>';
-                if (currentErrors.length > 0) {
-                    html += '<div style="margin-bottom: 10px;"><span style="color: var(--accent-red);"><i class="fas fa-times-circle"></i> Errors:</span></div>';
-                    currentErrors.forEach((err) => {
-                        html += `<div class="error-item" style="margin-bottom: 8px;"><div class="error-line-num" style="font-weight: 600;">Line ${err.line || 0}</div><div class="error-message" style="color: var(--accent-red);">${escapeHtml(err.message || "Unknown error")}</div></div>`;
-                    });
-                }
-                if (currentWarnings.length > 0) {
-                    if (currentErrors.length > 0) html += '<div style="margin: 15px 0 10px 0;"></div>';
-                    html += '<div style="margin-bottom: 10px;"><span style="color: var(--accent-yellow);"><i class="fas fa-exclamation-triangle"></i> Warnings:</span></div>';
-                    currentWarnings.forEach((warn) => {
-                        html += `<div class="error-item warning" style="margin-bottom: 8px;"><div class="error-line-num" style="font-weight: 600;">Line ${warn.line || 0}</div><div class="error-message" style="color: var(--accent-yellow);">${escapeHtml(warn.message || "Unknown warning")}</div></div>`;
-                    });
-                }
-                errorListEl.innerHTML = html;
-            }
-
-            function previousFile() {
-                if (currentFileIndex > 0) loadFile(currentFileIndex - 1);
-            }
-
-            function nextFile() {
-                if (currentFileIndex < fileList.length - 1) loadFile(currentFileIndex + 1);
-            }
-
-            async function saveFeedbackAndDone() {
-                const feedback = document.getElementById("feedbackText").value;
-                if (!currentSubmissionId) {
-                    showError("No active analysis session");
-                    return;
-                }
-                showLoading("Saving feedback...");
-
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/save-feedback`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ submission_id: currentSubmissionId, feedback: feedback, reviewer_id: "instructor1" }),
-                    });
-
-                    const loading = document.getElementById("analysisLoading");
-                    if (loading) loading.remove();
-
-                    if (result.success && result.data.success) {
-                        const analysisResult = await safeFetchJson(`${API_BASE_URL}/api/analysis/${currentSubmissionId}`);
-                        if (analysisResult.success) {
-                            const submission = analysisResult.data.submission;
-                            const files = analysisResult.data.files || [];
-                            const fileDetails = files.map((file) => ({ name: file.file_name, errors: file.errors || [], warnings: file.warnings || [] }));
-                            await updateAssignmentCardWithResults(currentSubmissionId, feedback, fileDetails);
-                        }
-                        showSuccess("Review completed! All files have been analyzed.");
-                        closeModal();
-                        await loadAssignments();
-                        updateStatusCounts();
-                    } else {
-                        showError(result.error || "Failed to save feedback");
-                    }
-                } catch (error) {
-                    showError("Error saving feedback: " + error.message);
-                }
-            }
-
-            async function updateAssignmentCardWithResults(submissionId, feedback, fileDetails) {
-                try {
-                    const result = await safeFetchJson(`${API_BASE_URL}/api/analysis/${submissionId}`);
-                    if (result.success && result.data.submission) {
-                        const submission = result.data.submission;
-                        const assignmentId = submission.assignment_id;
-                        const files = result.data.files || [];
-                        const assignmentCard = document.querySelector(`[data-assignment-id="${assignmentId}"]`);
-                        const statusEl = document.getElementById(`status-${assignmentId}`);
-                        const actionBtn = assignmentCard?.querySelector(".open-analyzer");
-                        const feedbackContainer = document.querySelector(`[data-assignment-id="${assignmentId}"] .assignment-feedback`);
-
-                        if (actionBtn) {
-                            actionBtn.innerHTML = '<i class="fas fa-search"></i> Review';
-                            actionBtn.classList.remove("btn-primary");
-                            actionBtn.classList.add("btn-secondary");
-                        }
-                        if (statusEl) {
-                            statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Checked`;
-                            statusEl.className = "status-badge checked";
-                        }
-
-                        if (feedbackContainer) {
-                            feedbackContainer.style.display = "block";
-                            let totalErrors = 0, totalWarnings = 0;
-                            files.forEach(file => {
-                                totalErrors += file.errors?.length || 0;
-                                totalWarnings += file.warnings?.length || 0;
-                            });
-
-                            const filesWithIssues = files.filter(f => f.errors?.length > 0 || f.warnings?.length > 0);
-                            const filesWithoutIssues = files.filter(f => (!f.errors || f.errors.length === 0) && (!f.warnings || f.warnings.length === 0));
-                            let filesHtml = "";
-
-                            if (filesWithIssues.length > 0) {
-                                filesHtml += `<div style="margin-bottom: 20px;"><h4 style="color: var(--accent-red); margin-bottom: 15px;"><i class="fas fa-exclamation-triangle"></i> Files with Issues (${filesWithIssues.length})</h4>`;
-                                filesWithIssues.forEach(file => {
-                                    const fileErrors = file.errors || [];
-                                    const fileWarnings = file.warnings || [];
-                                    filesHtml += `
+                if (filesWithIssues.length > 0) {
+                  filesHtml += `<div style="margin-bottom: 20px;"><h4 style="color: var(--accent-red); margin-bottom: 15px;"><i class="fas fa-exclamation-triangle"></i> Files with Issues (${filesWithIssues.length})</h4>`;
+                  filesWithIssues.forEach((file) => {
+                    const fileErrors = file.errors || [];
+                    const fileWarnings = file.warnings || [];
+                    filesHtml += `
                                         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; overflow: hidden;">
                                             <div style="background: var(--bg-input); padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
                                                 <i class="fas fa-file-code" style="color: var(--accent-blue);"></i><strong>${file.file_name}</strong>
@@ -1667,65 +2273,79 @@
                                             </div>
                                             <div style="padding: 15px;">
                                     `;
-                                    if (fileErrors.length > 0) {
-                                        filesHtml += `<div style="margin-bottom: 10px;"><strong style="color: var(--accent-red);">Errors:</strong></div>`;
-                                        fileErrors.forEach(err => {
-                                            filesHtml += `<div style="background: rgba(248,81,73,0.1); padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 3px solid var(--accent-red);"><span style="color: var(--accent-red); font-weight: 600;">Line ${err.line || "?"}:</span><span style="color: var(--text-secondary); margin-left: 8px;">${escapeHtml(err.message)}</span></div>`;
-                                        });
-                                    }
-                                    if (fileWarnings.length > 0) {
-                                        if (fileErrors.length > 0) filesHtml += `<div style="margin-top: 15px;"></div>`;
-                                        filesHtml += `<div style="margin-bottom: 10px;"><strong style="color: var(--accent-yellow);">Warnings:</strong></div>`;
-                                        fileWarnings.forEach(warn => {
-                                            filesHtml += `<div style="background: rgba(210,153,34,0.1); padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 3px solid var(--accent-yellow);"><span style="color: var(--accent-yellow); font-weight: 600;">Line ${warn.line || "?"}:</span><span style="color: var(--text-secondary); margin-left: 8px;">${escapeHtml(warn.message)}</span></div>`;
-                                        });
-                                    }
-                                    filesHtml += `</div></div>`;
-                                });
-                                filesHtml += `</div>`;
-                            }
+                    if (fileErrors.length > 0) {
+                      filesHtml += `<div style="margin-bottom: 10px;"><strong style="color: var(--accent-red);">Errors:</strong></div>`;
+                      fileErrors.forEach((err) => {
+                        filesHtml += `<div style="background: rgba(248,81,73,0.1); padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 3px solid var(--accent-red);"><span style="color: var(--accent-red); font-weight: 600;">Line ${err.line || "?"}:</span><span style="color: var(--text-secondary); margin-left: 8px;">${escapeHtml(err.message)}</span></div>`;
+                      });
+                    }
+                    if (fileWarnings.length > 0) {
+                      if (fileErrors.length > 0)
+                        filesHtml += `<div style="margin-top: 15px;"></div>`;
+                      filesHtml += `<div style="margin-bottom: 10px;"><strong style="color: var(--accent-yellow);">Warnings:</strong></div>`;
+                      fileWarnings.forEach((warn) => {
+                        filesHtml += `<div style="background: rgba(210,153,34,0.1); padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 3px solid var(--accent-yellow);"><span style="color: var(--accent-yellow); font-weight: 600;">Line ${warn.line || "?"}:</span><span style="color: var(--text-secondary); margin-left: 8px;">${escapeHtml(warn.message)}</span></div>`;
+                      });
+                    }
+                    filesHtml += `</div></div>`;
+                  });
+                  filesHtml += `</div>`;
+                }
 
-                            if (filesWithoutIssues.length > 0) {
-                                filesHtml += `<div style="margin-top: 20px;"><h4 style="color: var(--accent-green); margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Clean Files (${filesWithoutIssues.length})</h4><div style="display: flex; flex-wrap: wrap; gap: 10px;">`;
-                                filesWithoutIssues.forEach(file => {
-                                    filesHtml += `<span style="background: var(--bg-input); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;"><i class="fas fa-file-code" style="color: var(--accent-green);"></i><span>${file.file_name}</span><i class="fas fa-check-circle" style="color: var(--accent-green);"></i></span>`;
-                                });
-                                filesHtml += `</div></div>`;
-                            }
+                if (filesWithoutIssues.length > 0) {
+                  filesHtml += `<div style="margin-top: 20px;"><h4 style="color: var(--accent-green); margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Clean Files (${filesWithoutIssues.length})</h4><div style="display: flex; flex-wrap: wrap; gap: 10px;">`;
+                  filesWithoutIssues.forEach((file) => {
+                    filesHtml += `<span style="background: var(--bg-input); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;"><i class="fas fa-file-code" style="color: var(--accent-green);"></i><span>${file.file_name}</span><i class="fas fa-check-circle" style="color: var(--accent-green);"></i></span>`;
+                  });
+                  filesHtml += `</div></div>`;
+                }
 
-                            feedbackContainer.innerHTML = `
-                                <div style="margin-bottom: 25px;"><div class="feedback-summary" style="display: flex; gap: 15px; flex-wrap: wrap;"><span class="feedback-stat errors" style="padding: 10px 20px;"><i class="fas fa-times-circle"></i> ${totalErrors} Total Errors</span><span class="feedback-stat warnings" style="padding: 10px 20px;"><i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Total Warnings</span><span class="feedback-stat status" style="padding: 10px 20px;"><i class="fas fa-check"></i> ${files.length} Total Files</span></div></div>
+                feedbackContainer.innerHTML = `
+                                <div style="margin-bottom: 25px;"><div class="feedback-summary" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                    <span class="feedback-stat errors" style="padding: 10px 20px;"><i class="fas fa-times-circle"></i> ${totalErrors} Total Errors</span>
+                                    <span class="feedback-stat warnings" style="padding: 10px 20px;"><i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Total Warnings</span>
+                                    <span class="feedback-stat status" style="padding: 10px 20px;"><i class="fas fa-check"></i> ${files.length} Total Files</span>
+                                    ${grade ? `<span class="feedback-stat grade" style="padding: 10px 20px;"><i class="fas fa-star"></i> Grade: ${grade}</span>` : ""}
+                                </div></div>
                                 ${feedback ? `<div class="feedback-text" style="margin-bottom: 25px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px;"><h4 style="color: var(--accent-blue); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-comment"></i> Professor's Feedback</h4><p style="white-space: pre-wrap; background: var(--bg-input); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent-blue); margin: 0;">${escapeHtml(feedback)}</p></div>` : ""}
                                 <h3 style="margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 10px;"><i class="fas fa-code-branch"></i> Detailed File Analysis</h3>
                                 ${filesHtml}
                             `;
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error updating card:", error);
-                }
+              }
             }
+          } catch (error) {
+            console.error("Error updating card:", error);
+          }
+        }
 
-            // Event Listeners
-            document.getElementById("fileSearch").addEventListener("input", (e) => renderFileList(e.target.value));
-            document.getElementById("syntaxModal").addEventListener("click", (e) => {
-                if (e.target === document.getElementById("syntaxModal")) closeModal();
-            });
-            document.addEventListener("keydown", (e) => {
-                if (document.getElementById("syntaxModal").classList.contains("active")) {
-                    if (e.key === "Escape") closeModal();
-                    if (e.key === "ArrowLeft") previousFile();
-                    if (e.key === "ArrowRight") nextFile();
-                }
-            });
+        // Event Listeners
+        document
+          .getElementById("fileSearch")
+          .addEventListener("input", (e) => renderFileList(e.target.value));
+        document
+          .getElementById("syntaxModal")
+          .addEventListener("click", (e) => {
+            if (e.target === document.getElementById("syntaxModal"))
+              closeModal();
+          });
+        document.addEventListener("keydown", (e) => {
+          if (
+            document.getElementById("syntaxModal").classList.contains("active")
+          ) {
+            if (e.key === "Escape") closeModal();
+            if (e.key === "ArrowLeft") previousFile();
+            if (e.key === "ArrowRight") nextFile();
+          }
+        });
 
-            // Expose functions to window
-            window.closeModal = closeModal;
-            window.loadFile = loadFile;
-            window.previousFile = previousFile;
-            window.nextFile = nextFile;
-            window.saveFeedbackAndDone = saveFeedbackAndDone;
-        })();
+        // Expose functions to window
+        window.closeModal = closeModal;
+        window.loadFile = loadFile;
+        window.previousFile = previousFile;
+        window.nextFile = nextFile;
+        window.saveFeedbackAndDone = saveFeedbackAndDone;
+        window.saveGrade = saveGrade;
+      })();
     </script>
-</body>
+  </body>
 </html>
