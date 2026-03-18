@@ -1597,6 +1597,9 @@
           const file = fileList[index];
 
           try {
+            // Show loading
+            document.getElementById("codeLoading").classList.remove("hidden");
+
             // Get analysis details for this file
             const result = await safeFetchJson(
               `${API_BASE_URL}/api/analysis/${submissionId}`,
@@ -1607,16 +1610,23 @@
                 (f) => f.file_path === file.file_path,
               );
               if (fileResult) {
-                currentErrors = fileResult.errors || [];
-                currentWarnings = fileResult.warnings || [];
+                // Set ONLY this file's errors and warnings
+                currentErrors = (fileResult.errors || []).map((err) => ({
+                  line: err.line,
+                  message: err.message,
+                  type: "error",
+                }));
 
-                // Update file analysis status
-                fileAnalysisStatus[file.file_path] = {
-                  errors: currentErrors.length,
-                  warnings: currentWarnings.length,
-                };
+                currentWarnings = (fileResult.warnings || []).map((warn) => ({
+                  line: warn.line,
+                  message: warn.message,
+                  type: "warning",
+                }));
 
+                // Update the error panel
                 updateErrorPanel();
+
+                // Update file list status
                 renderFileList();
               }
             }
@@ -1627,30 +1637,94 @@
             document.getElementById("languageBadge").textContent =
               file.language || "c";
 
-            // Make sure loading is hidden
-            const loadingEl = document.getElementById("analysisLoading");
-            if (loadingEl) {
-              loadingEl.remove();
-            }
+            // For demo purposes, show code with current file's errors highlighted
+            setTimeout(() => {
+              displayFileContent(file, currentErrors, currentWarnings);
+              document.getElementById("codeLoading").classList.add("hidden");
+            }, 500);
+          } catch (error) {
+            console.error("Error loading file results:", error);
+            document.getElementById("codeLoading").classList.add("hidden");
+          }
+        }
 
-            // Show file content
-            const sampleCode = `// File: ${file.file_path || "Unknown"}
-// Language: ${file.language || "C/C++"}
-// Status: ${fileAnalysisStatus[file.file_path]?.errors > 0 ? "Has errors" : "No errors"}
+        function displayFileContent(file, errors, warnings) {
+          // Create a map of line numbers to error/warning messages
+          const errorMap = {};
+          errors.forEach((err) => {
+            if (!errorMap[err.line]) errorMap[err.line] = [];
+            errorMap[err.line].push({ type: "error", message: err.message });
+          });
+
+          warnings.forEach((warn) => {
+            if (!errorMap[warn.line]) errorMap[warn.line] = [];
+            errorMap[warn.line].push({
+              type: "warning",
+              message: warn.message,
+            });
+          });
+
+          // Generate sample code with markers
+          const lines = [];
+          lines.push(`// File: ${file.file_name}`);
+          lines.push(`// Language: ${file.language}`);
+          lines.push(
+            `// Issues: ${errors.length} errors, ${warnings.length} warnings`,
+          );
+          lines.push("");
+          lines.push("#include <stdio.h>");
+          lines.push("");
+          lines.push("int main() {");
+          lines.push('    printf("Hello, World!\\n");');
+          lines.push("    ");
+
+          // Add some code with potential issues based on actual errors
+          if (errors.length > 0 || warnings.length > 0) {
+            lines.push("    // Issues found in this file:");
+            errors.forEach((err) => {
+              lines.push(`    // ❌ Error at line ${err.line}: ${err.message}`);
+            });
+            warnings.forEach((warn) => {
+              lines.push(
+                `    // ⚠️ Warning at line ${warn.line}: ${warn.message}`,
+              );
+            });
+          } else {
+            lines.push("    // No issues found in this file");
+          }
+
+          lines.push("    return 0;");
+          lines.push("}");
+
+          displayCode(lines.join("\n"), file.language);
+        }
+
+        function generateSampleCode(file, errors, warnings) {
+          const fileName = file.file_name || file.name || "Unknown";
+          const language = file.language || "c";
+
+          let code = `// File: ${fileName}
+// Language: ${language}
+// Errors: ${errors.length}, Warnings: ${warnings.length}
 
 #include <stdio.h>
 
 int main() {
     printf("Hello, World!\\n");
+    
+    // Sample code with issues
+    int x = 10;
+    int y;  // Warning: uninitialized variable
+    
+    if (x = 5) {  // Error: assignment in condition
+        printf("x is 5\\n");
+    }
+    
     return 0;
 }`;
 
-            displayCode(sampleCode, file.language || "c");
-          } catch (error) {
-            console.error("Error loading file results:", error);
-          }
+          return code;
         }
-
         function renderFileList(filter = "") {
           const fileListEl = document.getElementById("fileList");
 
@@ -1772,6 +1846,7 @@ int main() {
           lines.forEach((line, i) => {
             lineNumbersHtml += `<div>${i + 1}</div>`;
 
+            // Check if this line has an error or warning in the CURRENT file only
             const hasError = currentErrors.some((e) => e.line === i + 1);
             const hasWarning = currentWarnings.some((w) => w.line === i + 1);
 
@@ -1802,33 +1877,44 @@ int main() {
 
           if (currentErrors.length === 0 && currentWarnings.length === 0) {
             errorListEl.innerHTML = `
-                        <div class="no-errors">
-                            <i class="fas fa-check-circle"></i>
-                            <div>No issues found!</div>
-                        </div>
-                    `;
+            <div class="no-errors">
+                <i class="fas fa-check-circle"></i>
+                <div>No issues found in this file!</div>
+            </div>
+        `;
             return;
           }
 
-          let html = "";
+          let html =
+            '<div style="margin-bottom: 10px;"><strong>Issues in current file:</strong></div>';
 
-          currentErrors.forEach((err) => {
-            html += `
-                        <div class="error-item">
-                            <div class="error-line-num">Line ${err.line || 0}</div>
-                            <div class="error-message">${escapeHtml(err.message || "Unknown error")}</div>
-                        </div>
-                    `;
-          });
+          if (currentErrors.length > 0) {
+            html +=
+              '<div style="margin-bottom: 10px;"><span style="color: var(--accent-red);"><i class="fas fa-times-circle"></i> Errors:</span></div>';
+            currentErrors.forEach((err) => {
+              html += `
+                <div class="error-item" style="margin-bottom: 8px;">
+                    <div class="error-line-num" style="font-weight: 600;">Line ${err.line || 0}</div>
+                    <div class="error-message" style="color: var(--accent-red);">${escapeHtml(err.message || "Unknown error")}</div>
+                </div>
+            `;
+            });
+          }
 
-          currentWarnings.forEach((warn) => {
-            html += `
-                        <div class="error-item warning">
-                            <div class="error-line-num">Line ${warn.line || 0}</div>
-                            <div class="error-message">${escapeHtml(warn.message || "Unknown warning")}</div>
-                        </div>
-                    `;
-          });
+          if (currentWarnings.length > 0) {
+            if (currentErrors.length > 0)
+              html += '<div style="margin: 15px 0 10px 0;"></div>';
+            html +=
+              '<div style="margin-bottom: 10px;"><span style="color: var(--accent-yellow);"><i class="fas fa-exclamation-triangle"></i> Warnings:</span></div>';
+            currentWarnings.forEach((warn) => {
+              html += `
+                <div class="error-item warning" style="margin-bottom: 8px;">
+                    <div class="error-line-num" style="font-weight: 600;">Line ${warn.line || 0}</div>
+                    <div class="error-message" style="color: var(--accent-yellow);">${escapeHtml(warn.message || "Unknown warning")}</div>
+                </div>
+            `;
+            });
+          }
 
           errorListEl.innerHTML = html;
         }
@@ -1853,10 +1939,6 @@ int main() {
             return;
           }
 
-          // Remove loading if any
-          const loadingEl = document.getElementById("analysisLoading");
-          if (loadingEl) loadingEl.remove();
-
           showLoading("Saving feedback...");
 
           try {
@@ -1873,7 +1955,6 @@ int main() {
               },
             );
 
-            // Remove loading
             const loading = document.getElementById("analysisLoading");
             if (loading) loading.remove();
 
@@ -1887,26 +1968,18 @@ int main() {
                 const submission = analysisResult.data.submission;
                 const files = analysisResult.data.files || [];
 
-                // Calculate total errors and warnings across all files
-                let totalErrors = 0;
-                let totalWarnings = 0;
-                let fileList = [];
-
-                files.forEach((file) => {
-                  totalErrors += file.errors?.length || 0;
-                  totalWarnings += file.warnings?.length || 0;
-                  if (file.file_name) {
-                    fileList.push(file.file_name);
-                  }
-                });
+                // Calculate per-file errors and warnings
+                const fileDetails = files.map((file) => ({
+                  name: file.file_name,
+                  errors: file.errors || [],
+                  warnings: file.warnings || [],
+                }));
 
                 // Update assignment card with results
                 await updateAssignmentCardWithResults(
                   currentSubmissionId,
                   feedback,
-                  totalErrors,
-                  totalWarnings,
-                  fileList,
+                  fileDetails,
                 );
               }
 
@@ -1927,9 +2000,7 @@ int main() {
         async function updateAssignmentCardWithResults(
           submissionId,
           feedback,
-          totalErrors,
-          totalWarnings,
-          fileList,
+          fileDetails,
         ) {
           try {
             const result = await safeFetchJson(
@@ -1939,6 +2010,7 @@ int main() {
             if (result.success && result.data.submission) {
               const submission = result.data.submission;
               const assignmentId = submission.assignment_id;
+              const files = result.data.files || [];
 
               // Find the assignment card
               const assignmentCard = document.querySelector(
@@ -1965,50 +2037,138 @@ int main() {
                 statusEl.className = "status-badge checked";
               }
 
-              // Create detailed feedback display
+              // Create detailed feedback display with per-file issues
               if (feedbackContainer) {
                 feedbackContainer.style.display = "block";
 
-                // Create file list HTML
-                const fileListHtml =
-                  fileList && fileList.length > 0
-                    ? `
-                    <div style="margin-top: 15px;">
-                        <strong style="color: var(--text-secondary);">Files Analyzed:</strong>
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                            ${fileList
-                              .map(
-                                (file) => `
-                                <span style="background: var(--bg-input); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; border: 1px solid var(--border);">
-                                    <i class="fas fa-file-code" style="color: var(--accent-blue);"></i> ${file}
-                                </span>
-                            `,
-                              )
-                              .join("")}
-                        </div>
-                    </div>
-                `
-                    : "";
+                // Calculate totals
+                let totalErrors = 0;
+                let totalWarnings = 0;
 
+                files.forEach((file) => {
+                  totalErrors += file.errors?.length || 0;
+                  totalWarnings += file.warnings?.length || 0;
+                });
+
+                // Create per-file issue display
+                const filesWithIssues = files.filter(
+                  (f) => f.errors?.length > 0 || f.warnings?.length > 0,
+                );
+                const filesWithoutIssues = files.filter(
+                  (f) =>
+                    (!f.errors || f.errors.length === 0) &&
+                    (!f.warnings || f.warnings.length === 0),
+                );
+
+                let filesHtml = "";
+
+                // First show files with issues
+                if (filesWithIssues.length > 0) {
+                  filesHtml += `
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: var(--accent-red); margin-bottom: 15px;">
+                                <i class="fas fa-exclamation-triangle"></i> Files with Issues (${filesWithIssues.length})
+                            </h4>
+                    `;
+
+                  filesWithIssues.forEach((file) => {
+                    const fileErrors = file.errors || [];
+                    const fileWarnings = file.warnings || [];
+
+                    filesHtml += `
+                            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; overflow: hidden;">
+                                <div style="background: var(--bg-input); padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-file-code" style="color: var(--accent-blue);"></i>
+                                    <strong>${file.file_name}</strong>
+                                    <span style="margin-left: auto; display: flex; gap: 15px;">
+                                        ${fileErrors.length > 0 ? `<span style="color: var(--accent-red);"><i class="fas fa-times-circle"></i> ${fileErrors.length}</span>` : ""}
+                                        ${fileWarnings.length > 0 ? `<span style="color: var(--accent-yellow);"><i class="fas fa-exclamation-triangle"></i> ${fileWarnings.length}</span>` : ""}
+                                    </span>
+                                </div>
+                                <div style="padding: 15px;">
+                        `;
+
+                    // Show errors for this file
+                    if (fileErrors.length > 0) {
+                      filesHtml += `<div style="margin-bottom: 10px;"><strong style="color: var(--accent-red);">Errors:</strong></div>`;
+                      fileErrors.forEach((err) => {
+                        filesHtml += `
+                                    <div style="background: rgba(248,81,73,0.1); padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 3px solid var(--accent-red);">
+                                        <span style="color: var(--accent-red); font-weight: 600;">Line ${err.line || "?"}:</span>
+                                        <span style="color: var(--text-secondary); margin-left: 8px;">${escapeHtml(err.message)}</span>
+                                    </div>
+                                `;
+                      });
+                    }
+
+                    // Show warnings for this file
+                    if (fileWarnings.length > 0) {
+                      if (fileErrors.length > 0)
+                        filesHtml += `<div style="margin-top: 15px;"></div>`;
+                      filesHtml += `<div style="margin-bottom: 10px;"><strong style="color: var(--accent-yellow);">Warnings:</strong></div>`;
+                      fileWarnings.forEach((warn) => {
+                        filesHtml += `
+                                    <div style="background: rgba(210,153,34,0.1); padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 3px solid var(--accent-yellow);">
+                                        <span style="color: var(--accent-yellow); font-weight: 600;">Line ${warn.line || "?"}:</span>
+                                        <span style="color: var(--text-secondary); margin-left: 8px;">${escapeHtml(warn.message)}</span>
+                                    </div>
+                                `;
+                      });
+                    }
+
+                    filesHtml += `</div></div>`;
+                  });
+
+                  filesHtml += `</div>`;
+                }
+
+                // Then show files without issues
+                if (filesWithoutIssues.length > 0) {
+                  filesHtml += `
+                        <div style="margin-top: 20px;">
+                            <h4 style="color: var(--accent-green); margin-bottom: 15px;">
+                                <i class="fas fa-check-circle"></i> Clean Files (${filesWithoutIssues.length})
+                            </h4>
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    `;
+
+                  filesWithoutIssues.forEach((file) => {
+                    filesHtml += `
+                            <span style="background: var(--bg-input); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-file-code" style="color: var(--accent-green);"></i>
+                                <span>${file.file_name}</span>
+                                <i class="fas fa-check-circle" style="color: var(--accent-green);"></i>
+                            </span>
+                        `;
+                  });
+
+                  filesHtml += `</div></div>`;
+                }
+
+                // Build the complete feedback container
                 feedbackContainer.innerHTML = `
-                    <div class="feedback-summary">
-                        <span class="feedback-stat errors">
-                            <i class="fas fa-times-circle"></i> ${totalErrors} Errors
-                        </span>
-                        <span class="feedback-stat warnings">
-                            <i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Warnings
-                        </span>
-                        <span class="feedback-stat status">
-                            <i class="fas fa-check"></i> ${submission.total_files || 0} Files
-                        </span>
+                    <div style="margin-bottom: 25px;">
+                        <div class="feedback-summary" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <span class="feedback-stat errors" style="padding: 10px 20px;">
+                                <i class="fas fa-times-circle"></i> ${totalErrors} Total Errors
+                            </span>
+                            <span class="feedback-stat warnings" style="padding: 10px 20px;">
+                                <i class="fas fa-exclamation-triangle"></i> ${totalWarnings} Total Warnings
+                            </span>
+                            <span class="feedback-stat status" style="padding: 10px 20px;">
+                                <i class="fas fa-check"></i> ${files.length} Total Files
+                            </span>
+                        </div>
                     </div>
                     
                     ${
                       feedback
                         ? `
-                        <div class="feedback-text">
-                            <h4><i class="fas fa-comment"></i> Professor's Feedback</h4>
-                            <p style="white-space: pre-wrap; background: var(--bg-input); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent-blue);">
+                        <div class="feedback-text" style="margin-bottom: 25px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                            <h4 style="color: var(--accent-blue); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-comment"></i> Professor's Feedback
+                            </h4>
+                            <p style="white-space: pre-wrap; background: var(--bg-input); padding: 15px; border-radius: 8px; border-left: 3px solid var(--accent-blue); margin: 0;">
                                 ${escapeHtml(feedback)}
                             </p>
                         </div>
@@ -2016,14 +2176,11 @@ int main() {
                         : ""
                     }
                     
-                    ${fileListHtml}
+                    <h3 style="margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-code-branch"></i> Detailed File Analysis
+                    </h3>
                     
-                    <div style="margin-top: 15px; padding: 10px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
-                        <div style="display: flex; align-items: center; gap: 10px; color: var(--accent-green);">
-                            <i class="fas fa-check-circle"></i>
-                            <span style="font-weight: 600;">Review completed on ${new Date().toLocaleDateString()}</span>
-                        </div>
-                    </div>
+                    ${filesHtml}
                 `;
               }
             }

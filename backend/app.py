@@ -321,7 +321,6 @@ def analyze_repository_background(submission_id, repo_url, branch):
         # Find C/C++ files
         c_files = []
         for root, dirs, files in os.walk(temp_dir):
-            # Skip hidden directories
             dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['build', 'dist', 'node_modules']]
             
             for file in files:
@@ -362,23 +361,30 @@ def analyze_repository_background(submission_id, repo_url, branch):
                     timeout=30
                 )
                 
-                # Parse errors and warnings
+                # Parse errors and warnings using the clean_error_message function
                 errors = []
                 warnings = []
                 
                 for line in process.stderr.split('\n'):
-                    if 'error:' in line.lower():
+                    if not line.strip():
+                        continue
+                    
+                    cleaned = clean_error_message(line)
+                    
+                    if cleaned['type'] == 'error':
                         errors.append({
-                            'line': 0,
-                            'message': line.strip(),
+                            'line': cleaned['line'],
+                            'message': cleaned['message'],
                             'type': 'error'
                         })
-                    elif 'warning:' in line.lower():
+                        print(f"   📍 Clean error: Line {cleaned['line']} - {cleaned['message'][:60]}...")
+                    elif cleaned['type'] == 'warning':
                         warnings.append({
-                            'line': 0,
-                            'message': line.strip(),
+                            'line': cleaned['line'],
+                            'message': cleaned['message'],
                             'type': 'warning'
                         })
+                        print(f"   📍 Clean warning: Line {cleaned['line']} - {cleaned['message'][:60]}...")
                 
                 # Store result
                 result = {
@@ -408,8 +414,6 @@ def analyze_repository_background(submission_id, repo_url, branch):
                 status_icon = "✅" if len(errors) == 0 else "❌"
                 print(f"{status_icon} Analyzed: {rel_path} - Errors: {len(errors)}, Warnings: {len(warnings)}")
                 
-            except subprocess.TimeoutExpired:
-                print(f"⏱️  Timeout analyzing {rel_path}")
             except Exception as e:
                 print(f"❌ Error analyzing {rel_path}: {e}")
         
@@ -434,10 +438,168 @@ def analyze_repository_background(submission_id, repo_url, branch):
             {'$set': {'status': 'failed', 'error': str(e)}}
         )
     finally:
-        # Cleanup
         if temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
             print(f"🧹 Cleaned up {temp_dir}")
+
+def parse_compiler_output(output, file_name):
+    """Parse compiler output and clean file paths from messages"""
+    errors = []
+    warnings = []
+    
+    for line in output.split('\n'):
+        if not line.strip():
+            continue
+        
+        # Remove the full file path from the message
+        # Example: /tmp/tmp123/file.c:14:11: error: message
+        import re
+        match = re.match(r'.*?:(\d+):(\d+):\s+(error|warning):\s+(.*)', line)
+        if match:
+            line_num = int(match.group(1))
+            msg_type = match.group(3)
+            message = match.group(4)
+            
+            if 'error' in msg_type.lower():
+                errors.append({
+                    'line': line_num,
+                    'message': message.strip(),
+                    'type': 'error'
+                })
+            else:
+                warnings.append({
+                    'line': line_num,
+                    'message': message.strip(),
+                    'type': 'warning'
+                })
+        elif 'error:' in line.lower():
+            # Handle errors without line numbers
+            errors.append({
+                'line': 0,
+                'message': line.split('error:')[-1].strip(),
+                'type': 'error'
+            })
+        elif 'warning:' in line.lower():
+            warnings.append({
+                'line': 0,
+                'message': line.split('warning:')[-1].strip(),
+                'type': 'warning'
+            })
+    
+    return errors, warnings
+
+# Add this function to your app.py to clean compiler output
+def clean_error_message(error_line):
+    """Remove ALL file paths and clean up error messages - shows ONLY the message"""
+    import re
+    
+    # First, remove everything up to and including the last colon before "error:" or "warning:"
+    # This handles patterns like: C:\path\to\file.c:7:1: error: message
+    # Or: /path/to/file.c:7:1: error: message
+    
+    # Step 1: Find where "error:" or "warning:" appears
+    error_match = re.search(r'(error|warning):', error_line, re.IGNORECASE)
+    
+    if error_match:
+        # Get the position of "error:" or "warning:"
+        pos = error_match.start()
+        # Find the last colon before this position
+        last_colon = error_line.rfind(':', 0, pos)
+        if last_colon != -1:
+            # Extract everything after that colon
+            message_part = error_line[last_colon + 1:].strip()
+        else:
+            message_part = error_line[pos:].strip()
+    else:
+        # If no error/warning tag, try to just get the last part after the last colon
+        parts = error_line.split(':')
+        if len(parts) >= 3:
+            # Take everything after the second colon (usually the message)
+            message_part = ':'.join(parts[2:]).strip()
+        else:
+            message_part = error_line.strip()
+    
+    # Further clean up the message
+    # Remove any remaining "error:" or "warning:" prefix
+    message_part = re.sub(r'^(error|warning):\s*', '', message_part, flags=re.IGNORECASE)
+    
+    # Remove any leading numbers/colons that might remain
+    message_part = re.sub(r'^\d+:\d+:\s*', '', message_part)
+    message_part = re.sub(r'^\d+:\s*', '', message_part)
+    
+    # Try to extract line number if present
+    line_num = 0
+    line_match = re.search(r':(\d+):', error_line)
+    if line_match:
+        line_num = int(line_match.group(1))
+    
+    # Determine if it's an error or warning
+    msg_type = 'info'
+    if 'error:' in error_line.lower() or error_line.lower().startswith('error'):
+        msg_type = 'error'
+    elif 'warning:' in error_line.lower() or error_line.lower().startswith('warning'):
+        msg_type = 'warning'
+    
+    return {
+        'line': line_num,
+        'type': msg_type,
+        'message': message_part
+    }
+# Update the analyze_file function to use this cleaner
+def analyze_file(self, file_path, language):
+    """Analyze a single C/C++ file"""
+    result = {
+        'errors': [],
+        'warnings': [],
+        'compile_output': '',
+        'passed': True
+    }
+    
+    try:
+        if language == 'c':
+            cmd = ['gcc', '-fsyntax-only', '-Wall', '-Wextra', '-std=c11', file_path]
+        else:
+            cmd = ['g++', '-fsyntax-only', '-Wall', '-Wextra', '-std=c++14', file_path]
+        
+        process = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        # Clean and parse each line
+        for line in process.stderr.split('\n'):
+            if not line.strip():
+                continue
+            
+            cleaned = clean_error_message(line)
+            
+            if cleaned['type'] == 'error':
+                result['errors'].append({
+                    'line': cleaned['line'],
+                    'message': cleaned['message'],
+                    'type': 'error'
+                })
+                result['passed'] = False
+            elif cleaned['type'] == 'warning':
+                result['warnings'].append({
+                    'line': cleaned['line'],
+                    'message': cleaned['message'],
+                    'type': 'warning'
+                })
+        
+        result['compile_output'] = process.stderr
+        
+    except Exception as e:
+        result['errors'].append({
+            'line': 0,
+            'message': f'Analysis error: {str(e)}',
+            'type': 'error'
+        })
+        result['passed'] = False
+    
+    return result
 
 @app.route('/', methods=['GET'])
 def home():
