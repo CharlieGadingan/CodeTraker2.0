@@ -1506,7 +1506,7 @@
                     document.querySelector(".analysis-progress");
                   if (progressEl) progressEl.remove();
 
-                  // *** THIS IS THE KEY FIX - Hide the loading overlay ***
+                  // Hide the loading overlay
                   const loadingEl = document.getElementById("analysisLoading");
                   if (loadingEl) {
                     loadingEl.remove();
@@ -1589,7 +1589,7 @@
           }
         }
 
-        // Load file with analysis results
+        // Load file with analysis results - USING ACTUAL FILE CONTENT
         async function loadFileWithResults(index, submissionId) {
           if (index < 0 || index >= fileList.length) return;
 
@@ -1610,121 +1610,53 @@
                 (f) => f.file_path === file.file_path,
               );
               if (fileResult) {
-                // Set ONLY this file's errors and warnings
-                currentErrors = (fileResult.errors || []).map((err) => ({
-                  line: err.line,
-                  message: err.message,
-                  type: "error",
-                }));
+                // Set errors and warnings for this file
+                currentErrors = fileResult.errors || [];
+                currentWarnings = fileResult.warnings || [];
 
-                currentWarnings = (fileResult.warnings || []).map((warn) => ({
-                  line: warn.line,
-                  message: warn.message,
-                  type: "warning",
-                }));
+                // Update file analysis status
+                fileAnalysisStatus = {
+                  [file.file_path]: {
+                    errors: currentErrors.length,
+                    warnings: currentWarnings.length,
+                  },
+                };
 
-                // Update the error panel
+                // Update error panel
                 updateErrorPanel();
 
-                // Update file list status
-                renderFileList();
+                // Display the ACTUAL file content from the repository
+                if (fileResult.content) {
+                  displayCode(fileResult.content, fileResult.language || "c");
+                } else {
+                  displayCode(
+                    `// No content available for ${file.file_name}\n// The file might be binary or empty.`,
+                    file.language || "c",
+                  );
+                }
               }
             }
 
             // Update toolbar
             document.getElementById("currentFileName").textContent =
-              file.file_name || file.name || "Unknown";
+              file.file_name || "Unknown";
             document.getElementById("languageBadge").textContent =
               file.language || "c";
 
-            // For demo purposes, show code with current file's errors highlighted
-            setTimeout(() => {
-              displayFileContent(file, currentErrors, currentWarnings);
-              document.getElementById("codeLoading").classList.add("hidden");
-            }, 500);
-          } catch (error) {
-            console.error("Error loading file results:", error);
             document.getElementById("codeLoading").classList.add("hidden");
+
+            // Also hide the main analysis loading if it's still there
+            const analysisLoading = document.getElementById("analysisLoading");
+            if (analysisLoading) {
+              analysisLoading.remove();
+            }
+          } catch (error) {
+            console.error("Error loading file:", error);
+            document.getElementById("codeLoading").classList.add("hidden");
+            displayCode(`// Error loading file: ${error.message}`, "c");
           }
         }
 
-        function displayFileContent(file, errors, warnings) {
-          // Create a map of line numbers to error/warning messages
-          const errorMap = {};
-          errors.forEach((err) => {
-            if (!errorMap[err.line]) errorMap[err.line] = [];
-            errorMap[err.line].push({ type: "error", message: err.message });
-          });
-
-          warnings.forEach((warn) => {
-            if (!errorMap[warn.line]) errorMap[warn.line] = [];
-            errorMap[warn.line].push({
-              type: "warning",
-              message: warn.message,
-            });
-          });
-
-          // Generate sample code with markers
-          const lines = [];
-          lines.push(`// File: ${file.file_name}`);
-          lines.push(`// Language: ${file.language}`);
-          lines.push(
-            `// Issues: ${errors.length} errors, ${warnings.length} warnings`,
-          );
-          lines.push("");
-          lines.push("#include <stdio.h>");
-          lines.push("");
-          lines.push("int main() {");
-          lines.push('    printf("Hello, World!\\n");');
-          lines.push("    ");
-
-          // Add some code with potential issues based on actual errors
-          if (errors.length > 0 || warnings.length > 0) {
-            lines.push("    // Issues found in this file:");
-            errors.forEach((err) => {
-              lines.push(`    // ❌ Error at line ${err.line}: ${err.message}`);
-            });
-            warnings.forEach((warn) => {
-              lines.push(
-                `    // ⚠️ Warning at line ${warn.line}: ${warn.message}`,
-              );
-            });
-          } else {
-            lines.push("    // No issues found in this file");
-          }
-
-          lines.push("    return 0;");
-          lines.push("}");
-
-          displayCode(lines.join("\n"), file.language);
-        }
-
-        function generateSampleCode(file, errors, warnings) {
-          const fileName = file.file_name || file.name || "Unknown";
-          const language = file.language || "c";
-
-          let code = `// File: ${fileName}
-// Language: ${language}
-// Errors: ${errors.length}, Warnings: ${warnings.length}
-
-#include <stdio.h>
-
-int main() {
-    printf("Hello, World!\\n");
-    
-    // Sample code with issues
-    int x = 10;
-    int y;  // Warning: uninitialized variable
-    
-    if (x = 5) {  // Error: assignment in condition
-        printf("x is 5\\n");
-    }
-    
-    return 0;
-}`;
-
-          return code;
-        }
         function renderFileList(filter = "") {
           const fileListEl = document.getElementById("fileList");
 
@@ -1787,7 +1719,7 @@ int main() {
             .join("");
         }
 
-        // Load file function
+        // Load file function - uses stored content
         function loadFile(index) {
           if (index < 0 || index >= fileList.length) return;
 
@@ -1809,22 +1741,33 @@ int main() {
           // Show loading for file content
           document.getElementById("codeLoading").classList.remove("hidden");
 
+          // Get the file content from the stored file object
           setTimeout(() => {
-            // Get errors for this file
-            const status = fileAnalysisStatus[file.file_path];
+            if (file.content) {
+              // Set errors and warnings for this file
+              currentErrors = file.errors || [];
+              currentWarnings = file.warnings || [];
 
-            const sampleCode = `// File: ${file.file_path || "Unknown"}
-// Language: ${file.language || "C/C++"}
-// Errors: ${status?.errors || 0}, Warnings: ${status?.warnings || 0}
+              // Update file analysis status
+              fileAnalysisStatus = {
+                [file.file_path]: {
+                  errors: currentErrors.length,
+                  warnings: currentWarnings.length,
+                },
+              };
 
-#include <stdio.h>
+              // Update error panel
+              updateErrorPanel();
 
-int main() {
-    printf("Hello, World!\\n");
-    return 0;
-}`;
+              // Display the actual content
+              displayCode(file.content, file.language || "c");
+            } else {
+              displayCode(
+                `// No content available for ${file.file_name}`,
+                file.language || "c",
+              );
+            }
 
-            displayCode(sampleCode, file.language || "c");
             document.getElementById("codeLoading").classList.add("hidden");
 
             // Also hide the main analysis loading if it's still there
