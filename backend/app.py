@@ -185,7 +185,7 @@ def health_check():
 
 @app.route('/api/submit-repo', methods=['POST'])
 def submit_repository():
-    """Submit a repository for analysis"""
+    """Submit a repository for analysis - ALWAYS gets latest code from GitHub"""
     try:
         data = request.json
         
@@ -202,27 +202,55 @@ def submit_repository():
         if not assignment:
             return jsonify({'success': False, 'error': 'Assignment not found'}), 404
         
-        # Create submission
-        submission_id = str(uuid.uuid4())
-        submission = {
-            '_id': submission_id,
-            'student_id': student_id,
-            'assignment_id': assignment_id,
-            'repo_url': repo_url,
-            'branch': branch,
-            'status': 'pending',
-            'created_at': datetime.utcnow(),
-            'completed_at': None,
-            'total_files': 0,
-            'analyzed_files': 0,
-            'errors_count': 0,
-            'warnings_count': 0
-        }
+        # Check if there's an existing submission
+        existing_submission = submissions_collection.find_one({
+            "student_id": student_id,
+            "assignment_id": assignment_id
+        })
         
-        submissions_collection.insert_one(submission)
-        print(f"📝 Created submission: {submission_id} for {repo_url}")
+        if existing_submission:
+            # Use existing submission ID
+            submission_id = str(existing_submission['_id'])
+            print(f"📝 Using existing submission: {submission_id} for {repo_url}")
+            
+            # CRITICAL: Delete ALL old analysis results to ensure fresh data
+            result = analysis_results_collection.delete_many({"submission_id": submission_id})
+            print(f"   🗑️ Deleted {result.deleted_count} old analysis results")
+            
+            # Reset submission status
+            submissions_collection.update_one(
+                {'_id': submission_id},
+                {'$set': {
+                    'status': 'pending',
+                    'completed_at': None,
+                    'total_files': 0,
+                    'analyzed_files': 0,
+                    'errors_count': 0,
+                    'warnings_count': 0
+                }}
+            )
+        else:
+            # Create new submission
+            submission_id = str(uuid.uuid4())
+            submission = {
+                '_id': submission_id,
+                'student_id': student_id,
+                'assignment_id': assignment_id,
+                'repo_url': repo_url,
+                'branch': branch,
+                'status': 'pending',
+                'created_at': datetime.utcnow(),
+                'completed_at': None,
+                'total_files': 0,
+                'analyzed_files': 0,
+                'errors_count': 0,
+                'warnings_count': 0
+            }
+            submissions_collection.insert_one(submission)
+            print(f"📝 Created new submission: {submission_id} for {repo_url}")
         
-        # Start analysis in background
+        # ALWAYS start a new analysis thread (this will clone the latest code)
+        print(f"   🔄 Starting fresh analysis to get latest code...")
         thread = threading.Thread(
             target=analyze_repository_background,
             args=(submission_id, repo_url, branch)
@@ -335,8 +363,9 @@ def get_analysis(submission_id):
 
 @app.route('/api/files/<submission_id>', methods=['GET'])
 def get_files(submission_id):
-    """Get list of analyzed files"""
+    """Get list of ALL analyzed files with content"""
     try:
+        # Get ALL files for this submission (no filtering)
         files = list(analysis_results_collection.find(
             {'submission_id': submission_id},
             {
@@ -346,9 +375,13 @@ def get_files(submission_id):
                 'status': 1, 
                 'errors': 1, 
                 'warnings': 1,
-                'content': 1
+                'content': 1,
+                'passed': 1,
+                'file_size': 1
             }
-        ))
+        ).sort('file_path', 1))  # Sort by file path
+        
+        print(f"📤 Returning {len(files)} files for submission {submission_id}")
         
         return app.response_class(
             response=json.dumps({
@@ -429,15 +462,27 @@ def save_feedback():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def analyze_repository_background(submission_id, repo_url, branch):
-    """Background task for repository analysis - Gets ALL files content"""
+    """Background task for repository analysis - ALWAYS gets FRESH latest code"""
     temp_dir = None
     try:
         # Create temp directory
         temp_dir = tempfile.mkdtemp()
-        print(f"📦 Cloning {repo_url} to {temp_dir}")
+        print(f"📦 Cloning FRESH latest code from {repo_url} to {temp_dir}")
         
-        # Clone repository
-        Repo.clone_from(repo_url, temp_dir, branch=branch, depth=1)
+        # FORCE a fresh clone by:
+        # 1. Not using depth=1 (gets full history but ensures latest)
+        # 2. Explicitly fetching all branches
+        repo = Repo.clone_from(repo_url, temp_dir, branch=branch, depth=1)
+        
+        # Alternative: If depth=1 is causing issues, use this instead:
+        # repo = Repo.clone_from(repo_url, temp_dir)
+        # repo.git.checkout(branch)
+        # repo.git.pull('origin', branch)  # Force pull latest
+        
+        # Verify we got the latest by showing the last commit
+        latest_commit = repo.head.commit
+        print(f"   📍 Latest commit: {latest_commit.hexsha[:8]} - {latest_commit.message.strip()}")
+        print(f"   📅 Commit date: {datetime.fromtimestamp(latest_commit.committed_date)}")
         
         # Find ALL files in the repository
         all_files = []
@@ -450,19 +495,21 @@ def analyze_repository_background(submission_id, repo_url, branch):
                 file_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_path, temp_dir)
                 
+                # Get file stats to see when it was last modified
+                file_stat = os.stat(file_path)
+                mod_time = datetime.fromtimestamp(file_stat.st_mtime)
+                
                 # Determine language based on file extension
                 language = 'unknown'
                 ext = os.path.splitext(file)[1].lower()
                 
-                # C/C++ files
+                # ALL file types
                 if ext in ['.c']:
                     language = 'c'
                 elif ext in ['.cpp', '.cc', '.cxx']:
                     language = 'cpp'
                 elif ext in ['.h', '.hpp']:
                     language = 'header'
-                
-                # Other common languages
                 elif ext in ['.py']:
                     language = 'python'
                 elif ext in ['.js']:
@@ -501,72 +548,61 @@ def analyze_repository_background(submission_id, repo_url, branch):
                     language = 'kotlin'
                 elif ext in ['.sql']:
                     language = 'sql'
-                elif ext in ['.r']:
-                    language = 'r'
-                elif ext in ['.m']:
-                    language = 'matlab'
-                elif ext in ['.pl']:
-                    language = 'perl'
-                elif ext in ['.lua']:
-                    language = 'lua'
-                elif ext in ['.dart']:
-                    language = 'dart'
-                elif ext in ['.scala']:
-                    language = 'scala'
                 
-                all_files.append((file_path, rel_path, language, file))
+                all_files.append((file_path, rel_path, language, file, mod_time))
+        
+        # Log what we found
+        print(f"🔍 Found {len(all_files)} total files in repository")
+        print(f"📁 First 5 files:")
+        for i, (_, rel_path, lang, file, mod_time) in enumerate(all_files[:5]):
+            print(f"   {i+1}. {rel_path} ({lang}) - Modified: {mod_time.strftime('%Y-%m-%d %H:%M')}")
         
         # Update submission with total files
         submissions_collection.update_one(
             {'_id': submission_id},
             {'$set': {
                 'total_files': len(all_files),
-                'status': 'analyzing'
+                'status': 'analyzing',
+                'last_commit': latest_commit.hexsha,
+                'last_commit_message': latest_commit.message.strip(),
+                'last_commit_date': datetime.fromtimestamp(latest_commit.committed_date)
             }}
         )
         
-        print(f"🔍 Found {len(all_files)} total files to process")
-        print(f"📁 Repository: {repo_url}")
-        
-        # Process each file - ALWAYS read and store content
+        # Process EACH file
         total_errors = 0
         total_warnings = 0
         processed_count = 0
         
-        for file_path, rel_path, language, file_name in all_files:
+        for file_path, rel_path, language, file_name, mod_time in all_files:
             try:
-                # ALWAYS read file content for EVERY file
+                # Read file content
                 content = ""
                 file_size = os.path.getsize(file_path)
                 
-                # Try to read as text if file is not too large
-                if file_size < 10 * 1024 * 1024:  # Skip files larger than 10MB
-                    try:
-                        # Try multiple encodings
-                        encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1', 'ascii']
-                        for encoding in encodings:
-                            try:
-                                with open(file_path, 'r', encoding=encoding) as f:
-                                    content = f.read()
-                                break
-                            except (UnicodeDecodeError, LookupError):
-                                continue
-                        else:
-                            # If all text encodings fail, try reading as binary and decode with errors='ignore'
-                            try:
-                                with open(file_path, 'rb') as f:
-                                    content = f.read().decode('utf-8', errors='ignore')
-                            except:
-                                content = f"// Binary file: {file_name}\n// This file appears to be binary and cannot be displayed as text."
-                    except Exception as e:
-                        content = f"// Error reading file: {str(e)}"
-                else:
-                    content = f"// File too large: {file_size} bytes\n// This file exceeds the size limit for display."
+                # Try to read as text
+                try:
+                    # Try multiple encodings
+                    encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1', 'ascii']
+                    for encoding in encodings:
+                        try:
+                            with open(file_path, 'r', encoding=encoding) as f:
+                                content = f.read()
+                            break
+                        except (UnicodeDecodeError, LookupError):
+                            continue
+                    else:
+                        # If all text encodings fail, read as binary
+                        with open(file_path, 'rb') as f:
+                            content = f.read().decode('utf-8', errors='ignore')
+                except Exception as e:
+                    content = f"// Error reading file: {str(e)}"
                 
-                # Analyze only C/C++ files for errors/warnings
+                # Analyze for errors/warnings
                 errors = []
                 warnings = []
                 
+                # Only try to compile C/C++ files
                 if language in ['c', 'cpp']:
                     # Compile command
                     if language == 'c':
@@ -622,19 +658,20 @@ def analyze_repository_background(submission_id, repo_url, branch):
                             'type': 'error'
                         })
                 
-                # Store result with file content for EVERY file
+                # Store result with file content
                 result = {
                     'submission_id': submission_id,
-                    'file_path': rel_path.replace('\\', '/'),  # Normalize path separators
+                    'file_path': rel_path.replace('\\', '/'),
                     'file_name': file_name,
                     'language': language,
                     'status': 'analyzed',
                     'errors': errors,
                     'warnings': warnings,
-                    'content': content,  # ALWAYS store the content
+                    'content': content,
                     'analyzed_at': datetime.utcnow(),
                     'passed': len(errors) == 0,
-                    'file_size': file_size
+                    'file_size': file_size,
+                    'file_modified': mod_time
                 }
                 
                 # Insert into database
@@ -664,7 +701,7 @@ def analyze_repository_background(submission_id, repo_url, branch):
                 else:
                     status_icon = "✅"
                     
-                print(f"{status_icon} Processed: {rel_path} - Lang: {language}, Size: {file_size} bytes")
+                print(f"{status_icon} {rel_path} ({language})")
                 
             except Exception as e:
                 print(f"❌ Error processing {rel_path}: {e}")
@@ -702,35 +739,11 @@ def analyze_repository_background(submission_id, repo_url, branch):
         print(f"✅ Analysis complete for {submission_id}")
         print(f"{'='*50}")
         print(f"📊 SUMMARY:")
-        print(f"   Total files: {len(all_files)}")
+        print(f"   Total files in repository: {len(all_files)}")
         print(f"   Successfully processed: {processed_count}")
         print(f"   Total errors: {total_errors}")
         print(f"   Total warnings: {total_warnings}")
-        
-        # Print summary by language
-        lang_stats = {}
-        for file_path, rel_path, language, file_name in all_files:
-            lang_stats[language] = lang_stats.get(language, 0) + 1
-        
-        print(f"\n📁 Files by language:")
-        for lang, count in sorted(lang_stats.items(), key=lambda x: x[1], reverse=True):
-            print(f"   {lang}: {count}")
-        
-        # Print C/C++ files with issues
-        print(f"\n🔍 C/C++ Files with issues:")
-        c_files = analysis_results_collection.find({
-            'submission_id': submission_id,
-            'language': {'$in': ['c', 'cpp']},
-            '$or': [
-                {'errors': {'$ne': []}},
-                {'warnings': {'$ne': []}}
-            ]
-        })
-        
-        for file in c_files:
-            print(f"   📄 {file['file_name']}: {len(file['errors'])} errors, {len(file['warnings'])} warnings")
-        
-        print(f"{'='*50}")
+        print(f"   Latest commit: {latest_commit.hexsha[:8]} - {latest_commit.message.strip()}")
         
     except Exception as e:
         print(f"❌ Background analysis failed: {e}")
@@ -742,7 +755,7 @@ def analyze_repository_background(submission_id, repo_url, branch):
         # Clean up temp directory
         if temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
-            print(f"🧹 Cleaned up temporary directory: {temp_dir}")
+            print(f"🧹 Cleaned up temporary directory")
 
 @app.route('/', methods=['GET'])
 def home():
