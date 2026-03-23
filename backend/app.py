@@ -618,13 +618,13 @@ def analyze_repository_background(submission_id, repo_url, branch):
                             text=True,
                             timeout=30
                         )
-                        
                         # Parse errors and warnings
                         for line in process.stderr.split('\n'):
                             if not line.strip():
                                 continue
                             
                             cleaned = clean_error_message(line)
+                            
                             
                             if cleaned['type'] == 'error':
                                 errors.append({
@@ -638,6 +638,7 @@ def analyze_repository_background(submission_id, repo_url, branch):
                                     'message': cleaned['message'],
                                     'type': 'warning'
                                 })
+                                
                         
                     except subprocess.TimeoutExpired:
                         errors.append({
@@ -756,6 +757,8 @@ def analyze_repository_background(submission_id, repo_url, branch):
         if temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
             print(f"🧹 Cleaned up temporary directory")
+
+
 
 @app.route('/', methods=['GET'])
 def home():
